@@ -1,9 +1,14 @@
+import os
 import sqlite3
 
-DB_PATH = "crm.db"
+# Файл рядом с кодом исчезает при каждом передеплое — на Amvera это ошибка номер один.
+# Всё, что должно пережить выкладку, живёт в примонтированном /data.
+DATA_DIR = os.environ.get("DATA_DIR") or ("/data" if os.path.isdir("/data") else "data")
+DB_PATH = os.environ.get("DB_PATH") or os.path.join(DATA_DIR, "crm.db")
 
 
 def get_connection():
+    os.makedirs(os.path.dirname(DB_PATH) or ".", exist_ok=True)
     return sqlite3.connect(DB_PATH)
 
 
@@ -24,7 +29,6 @@ def init_db():
     """)
     conn.commit()
     conn.close()
-    print("База готова: таблица leads создана")
 
 
 def add_lead(client_name, client_contact, text, topic=None, urgency=None, draft_reply=None):
