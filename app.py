@@ -1,16 +1,27 @@
+import asyncio
+import json
 import os
 import secrets
 import time
 from contextlib import asynccontextmanager
 
+from alembic import command
+from alembic.config import Config
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi import Depends, FastAPI, Form, HTTPException, Request, status
+from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel, Field, ValidationError
 
-from db import get_all_leads, init_db
+import webhook
+from ai import analyze_lead
+from db import add_lead, get_all_leads, get_lead, set_markup, set_status
+from models import STATUSES
+from observability import log, setup
 
 load_dotenv()
+setup()
 
 ADMIN_USER = os.environ.get("ADMIN_USER", "")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
@@ -31,9 +42,7 @@ def _too_many_failures(ip: str) -> bool:
     return len(recent) >= MAX_FAILURES
 
 
-def require_admin(
-    request: Request, credentials: HTTPBasicCredentials = Depends(security)
-) -> str:
+def require_admin(request: Request, credentials: HTTPBasicCredentials = Depends(security)) -> str:
     """В заявках лежат имена и контакты живых людей: отдавать их без пароля нельзя ни
     в демо, ни тем более в проде. compare_digest — чтобы пароль нельзя было подобрать
     по времени ответа."""
@@ -62,10 +71,27 @@ def require_admin(
     return credentials.username
 
 
+def migrate() -> None:
+    """Схему заводят миграции, а не приложение.
+
+    alembic.command синхронный, поэтому вызывается в потоке: на старте контейнера
+    цикл событий уже крутится, и блокировать его нельзя.
+    """
+    config = Config(os.path.join(os.path.dirname(__file__), "alembic.ini"))
+    command.upgrade(config, "head")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    init_db()
+    await asyncio.to_thread(migrate)
     yield
+
+
+class LeadIn(BaseModel):
+    text: str = Field(min_length=1, max_length=5000)
+    name: str | None = Field(default=None, max_length=200)
+    contact: str | None = Field(default=None, max_length=200)
+    source: str | None = Field(default=None, max_length=60)
 
 
 app = FastAPI(title="AI-CRM", lifespan=lifespan)
@@ -80,5 +106,69 @@ def health():
 
 
 @app.get("/")
-def index(request: Request, _: str = Depends(require_admin)):
-    return templates.TemplateResponse(request, "index.html", {"leads": get_all_leads()})
+async def index(request: Request, _: str = Depends(require_admin)):
+    leads = await get_all_leads()
+    return templates.TemplateResponse(request, "index.html", {"leads": leads, "statuses": STATUSES})
+
+
+@app.post("/leads/{lead_id}/status")
+async def change_status(lead_id: int, status_to: str = Form(...), _: str = Depends(require_admin)):
+    if status_to not in STATUSES:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Неизвестный статус")
+    if await set_status(lead_id, status_to) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Заявка не найдена")
+    return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
+
+
+MAX_BODY = 20_000
+
+
+@app.post("/webhook/lead")
+async def incoming_lead(request: Request):
+    """Заявка снаружи: форма на сайте, квиз, чужой сервис.
+
+    Разметку моделью делаем в фоне и отвечаем сразу. Отправитель ждёт 200, а не наш поход
+    к ИИ: не дождавшись, он пришлёт заявку ещё раз, и в базе появится дубль.
+    """
+    body = await request.body()
+    if len(body) > MAX_BODY:
+        raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "Слишком большое тело")
+
+    try:
+        webhook.check(
+            body,
+            request.headers.get("X-Timestamp"),
+            request.headers.get("X-Signature"),
+        )
+    except webhook.BadSignature as e:
+        log.warning("webhook.rejected", reason=str(e))
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Подпись не сходится") from e
+
+    try:
+        payload = json.loads(body)
+        data = LeadIn.model_validate(payload)
+    except (ValueError, ValidationError) as e:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Не разобрал заявку") from e
+
+    lead = await add_lead(
+        client_name=data.name,
+        client_contact=data.contact,
+        text=data.text,
+        source=data.source,
+    )
+    asyncio.create_task(enrich(lead.id))
+    log.info("lead.accepted", lead_id=lead.id, source=data.source)
+    return {"id": lead.id, "status": lead.status}
+
+
+async def enrich(lead_id: int) -> None:
+    """Разметка заявки моделью. Падение здесь не должно ронять приём: заявка уже в базе."""
+    try:
+        lead = await get_lead(lead_id)
+        if lead is None:
+            return
+        markup = await asyncio.to_thread(analyze_lead, lead.text)
+        await set_markup(lead_id, markup.topic, markup.urgency, markup.draft_reply)
+        log.info("lead.enriched", lead_id=lead_id, urgency=markup.urgency)
+    except Exception:
+        log.exception("lead.enrich_failed", lead_id=lead_id)

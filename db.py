@@ -1,61 +1,91 @@
+"""Подключение к базе и операции над заявками.
+
+Движок один, а баз две: локально sqlite-файл, в облаке Postgres. Разницу держит на себе
+SQLAlchemy, поэтому в коде выше про это знать не нужно — меняется только DATABASE_URL.
+
+Всё асинхронное: дальше в продукте будут вебсокеты и агент, который сам ведёт переписку,
+и синхронный драйвер там начал бы блокировать цикл событий на каждом запросе к базе.
+"""
+
 import os
-import sqlite3
 
-# Файл рядом с кодом исчезает при каждом передеплое — на Amvera это ошибка номер один.
-# Всё, что должно пережить выкладку, живёт в примонтированном /data.
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+from models import Lead
+
 DATA_DIR = os.environ.get("DATA_DIR") or ("/data" if os.path.isdir("/data") else "data")
-DB_PATH = os.environ.get("DB_PATH") or os.path.join(DATA_DIR, "crm.db")
 
 
-def get_connection():
-    os.makedirs(os.path.dirname(DB_PATH) or ".", exist_ok=True)
-    return sqlite3.connect(DB_PATH)
+def database_url() -> str:
+    url = os.environ.get("DATABASE_URL")
+    if url:
+        # Amvera и Postgres-хостинги отдают строку в формате postgresql://, а нам нужен
+        # асинхронный драйвер. Подставляем его сами, чтобы не ловить это на деплое.
+        return url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    os.makedirs(DATA_DIR, exist_ok=True)
+    return f"sqlite+aiosqlite:///{os.path.join(DATA_DIR, 'crm.db')}"
 
 
-def init_db():
-    conn = get_connection()
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS leads (
-            id            INTEGER PRIMARY KEY,
-            created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            client_name   TEXT,
-            client_contact TEXT,
-            text          TEXT,
-            topic         TEXT,
-            urgency       TEXT,
-            draft_reply   TEXT,
-            status        TEXT DEFAULT 'new'
-        )
-    """)
-    conn.commit()
-    conn.close()
+engine = create_async_engine(database_url(), future=True)
+Session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
-def add_lead(client_name, client_contact, text, topic=None, urgency=None, draft_reply=None):
-    conn = get_connection()
-    conn.execute(
-        "INSERT INTO leads (client_name, client_contact, text, topic, urgency, draft_reply) "
-        "VALUES (?, ?, ?, ?, ?, ?)",
-        (client_name, client_contact, text, topic, urgency, draft_reply),
+async def add_lead(
+    client_name: str | None,
+    client_contact: str | None,
+    text: str,
+    topic: str | None = None,
+    urgency: str | None = None,
+    draft_reply: str | None = None,
+    source: str | None = None,
+) -> Lead:
+    lead = Lead(
+        client_name=client_name,
+        client_contact=client_contact,
+        text=text,
+        topic=topic,
+        urgency=urgency,
+        draft_reply=draft_reply,
+        source=source,
     )
-    conn.commit()
-    conn.close()
+    async with Session() as session:
+        session.add(lead)
+        await session.commit()
+        await session.refresh(lead)
+    return lead
 
 
-def get_all_leads():
-    conn = get_connection()
-    conn.row_factory = sqlite3.Row
-    rows = conn.execute("SELECT * FROM leads ORDER BY created_at DESC").fetchall()
-    conn.close()
-    return [dict(row) for row in rows]
+async def get_all_leads(limit: int = 200) -> list[Lead]:
+    async with Session() as session:
+        rows = await session.execute(select(Lead).order_by(Lead.created_at.desc()).limit(limit))
+        return list(rows.scalars())
 
 
-if __name__ == "__main__":
-    init_db()
-    add_lead(
-        client_name="Иван",
-        client_contact="@ivan",
-        text="Здравствуйте, хочу бота для записи клиентов, срочно надо",
-    )
-    for lead in get_all_leads():
-        print(lead)
+async def set_status(lead_id: int, status: str) -> Lead | None:
+    async with Session() as session:
+        lead = await session.get(Lead, lead_id)
+        if lead is None:
+            return None
+        lead.status = status
+        await session.commit()
+        await session.refresh(lead)
+    return lead
+
+
+async def get_lead(lead_id: int) -> Lead | None:
+    async with Session() as session:
+        return await session.get(Lead, lead_id)
+
+
+async def set_markup(
+    lead_id: int, topic: str | None, urgency: str | None, draft_reply: str | None
+) -> Lead | None:
+    async with Session() as session:
+        lead = await session.get(Lead, lead_id)
+        if lead is None:
+            return None
+        lead.topic, lead.urgency, lead.draft_reply = topic, urgency, draft_reply
+        await session.commit()
+        await session.refresh(lead)
+    return lead

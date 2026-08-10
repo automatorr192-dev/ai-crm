@@ -4,7 +4,7 @@
 alembic умеет сам сравнивать «что должно быть» с «что в базе» и писать миграции.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Literal
 
 from sqlalchemy import DateTime, Index, String, Text, func
@@ -46,7 +46,7 @@ class Lead(Base):
 
     @property
     def created_local(self) -> str:
-        moment = self.created_at or datetime.now(timezone.utc)
+        moment = self.created_at or datetime.now(UTC)
         return moment.strftime("%H:%M")
 
 
