@@ -87,8 +87,28 @@ async def test_garbage_body_with_valid_signature_is_rejected(database):
     assert await db.get_all_leads() == []
 
 
+async def test_repeated_delivery_does_not_double_the_lead(database, monkeypatch):
+    """Чужой сервис не дождался ответа и прислал заявку ещё раз — карточка одна."""
+    monkeypatch.setattr(app_module, "enrich", lambda lead_id: asyncio.sleep(0))
+
+    body = json.dumps({"text": "Хочу бота", "contact": "@ivan"}).encode()
+    ids = set()
+    for _ in range(2):
+        ts = str(time.time())
+        response = client.post(
+            "/webhook/lead",
+            content=body,
+            headers={"X-Timestamp": ts, "X-Signature": webhook.sign(body, ts)},
+        )
+        assert response.status_code == 200
+        ids.add(response.json()["id"])
+
+    assert len(ids) == 1
+    assert len(await db.get_all_leads()) == 1
+
+
 async def test_status_can_be_changed_from_admin(database):
-    lead = await db.add_lead("Иван", "@ivan", "текст")
+    lead, _ = await db.add_lead("Иван", "@ivan", "текст")
     response = client.post(
         f"/leads/{lead.id}/status",
         data={"status_to": "in_work"},
@@ -100,7 +120,7 @@ async def test_status_can_be_changed_from_admin(database):
 
 
 async def test_unknown_status_is_rejected(database):
-    lead = await db.add_lead(None, None, "текст")
+    lead, _ = await db.add_lead(None, None, "текст")
     response = client.post(
         f"/leads/{lead.id}/status",
         data={"status_to": "выдуманный"},
@@ -111,5 +131,17 @@ async def test_unknown_status_is_rejected(database):
 
 
 async def test_status_change_needs_password(database):
-    lead = await db.add_lead(None, None, "текст")
+    lead, _ = await db.add_lead(None, None, "текст")
     assert client.post(f"/leads/{lead.id}/status", data={"status_to": "closed"}).status_code == 401
+
+
+async def test_history_is_closed_without_password(database):
+    lead, _ = await db.add_lead(None, None, "текст")
+    assert client.get(f"/leads/{lead.id}/events").status_code == 401
+
+
+async def test_admin_reads_history(database):
+    lead, _ = await db.add_lead(None, None, "текст", source="сайт")
+    response = client.get(f"/leads/{lead.id}/events", headers=auth("admin", "secret"))
+    assert response.status_code == 200
+    assert response.json()["events"][0]["kind"] == "created"

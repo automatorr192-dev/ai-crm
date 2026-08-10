@@ -14,7 +14,10 @@ from observability import log, setup
 async def intake(client_name: str, client_contact: str, text: str, source: str = "консоль"):
     """Заявка сохраняется в любом случае: разметка — приятное дополнение, а потерянный
     лид — потерянные деньги."""
-    lead = await add_lead(client_name, client_contact, text, source=source)
+    lead, is_new = await add_lead(client_name, client_contact, text, source=source)
+    if not is_new:
+        log.info("lead.duplicate", lead_id=lead.id)
+        return lead
     try:
         markup = await asyncio.to_thread(analyze_lead, text)
     except RuntimeError as e:
