@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from alembic import command
 from alembic.config import Config
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, Form, HTTPException, Request, status
+from fastapi import Depends, FastAPI, Form, HTTPException, Request, WebSocket, status
 from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.templating import Jinja2Templates
@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field, ValidationError
 import webhook
 from ai import analyze_lead
 from db import add_lead, get_all_leads, get_lead, set_markup, set_status
+from hub import hub
 from models import STATUSES
 from observability import log, setup
 
@@ -26,6 +27,9 @@ setup()
 ADMIN_USER = os.environ.get("ADMIN_USER", "")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
 security = HTTPBasic()
+
+# Модель отвечает служебными словами. В интерфейсе человек читает по-русски.
+URGENCY_RU = {"high": "высокая", "medium": "средняя", "low": "низкая"}
 
 
 # Подбор пароля: без задержки перебор идёт со скоростью сети. Считаем неудачи по адресу
@@ -87,6 +91,21 @@ async def lifespan(app: FastAPI):
     yield
 
 
+def card(lead) -> dict:
+    """Одна форма заявки для вебсокета и для первой отрисовки страницы."""
+    return {
+        "id": lead.id,
+        "name": lead.client_name,
+        "contact": lead.client_contact,
+        "text": lead.text,
+        "topic": lead.topic,
+        "urgency": lead.urgency,
+        "draft": lead.draft_reply,
+        "status": lead.status,
+        "time": lead.created_local,
+    }
+
+
 class LeadIn(BaseModel):
     text: str = Field(min_length=1, max_length=5000)
     name: str | None = Field(default=None, max_length=200)
@@ -108,7 +127,11 @@ def health():
 @app.get("/")
 async def index(request: Request, _: str = Depends(require_admin)):
     leads = await get_all_leads()
-    return templates.TemplateResponse(request, "index.html", {"leads": leads, "statuses": STATUSES})
+    return templates.TemplateResponse(
+        request,
+        "index.html",
+        {"leads": leads, "statuses": STATUSES, "urgency_ru": URGENCY_RU},
+    )
 
 
 @app.post("/leads/{lead_id}/status")
@@ -156,6 +179,7 @@ async def incoming_lead(request: Request):
         text=data.text,
         source=data.source,
     )
+    await hub.send("lead.new", card(lead))
     asyncio.create_task(enrich(lead.id))
     log.info("lead.accepted", lead_id=lead.id, source=data.source)
     return {"id": lead.id, "status": lead.status}
@@ -168,7 +192,67 @@ async def enrich(lead_id: int) -> None:
         if lead is None:
             return
         markup = await asyncio.to_thread(analyze_lead, lead.text)
-        await set_markup(lead_id, markup.topic, markup.urgency, markup.draft_reply)
+        updated = await set_markup(lead_id, markup.topic, markup.urgency, markup.draft_reply)
         log.info("lead.enriched", lead_id=lead_id, urgency=markup.urgency)
+        if updated is not None:
+            await hub.send("lead.marked", card(updated))
     except Exception:
         log.exception("lead.enrich_failed", lead_id=lead_id)
+        await hub.send("lead.failed", {"id": lead_id})
+
+
+# --- Живой экран ---------------------------------------------------------------
+
+
+# Демо открыто без пароля, а каждая заявка — оплаченный вызов модели. Лимит по адресу.
+DEMO_PER_HOUR = int(os.environ.get("DEMO_PER_HOUR", 10))
+_demo: dict[str, list[float]] = {}
+
+
+def _demo_allowed(ip: str) -> bool:
+    now = time.time()
+    recent = [t for t in _demo.get(ip, []) if now - t < 3600]
+    _demo[ip] = recent
+    if len(recent) >= DEMO_PER_HOUR:
+        return False
+    recent.append(now)
+    return True
+
+
+@app.get("/live")
+async def live(request: Request):
+    leads = await get_all_leads(limit=12)
+    return templates.TemplateResponse(
+        request,
+        "live.html",
+        {"leads": [card(lead) for lead in leads], "urgency_ru": URGENCY_RU},
+    )
+
+
+@app.post("/api/quiz")
+async def quiz(request: Request, data: LeadIn):
+    if not _demo_allowed(request.client.host if request.client else "?"):
+        raise HTTPException(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            f"Демо принимает {DEMO_PER_HOUR} заявок в час с одного адреса. Загляните позже.",
+        )
+
+    lead = await add_lead(
+        client_name=data.name,
+        client_contact=data.contact,
+        text=data.text,
+        source=data.source or "демо",
+    )
+    await hub.send("lead.new", card(lead))
+    asyncio.create_task(enrich(lead.id))
+    log.info("lead.accepted", lead_id=lead.id, source="демо")
+    return card(lead)
+
+
+@app.websocket("/ws/leads")
+async def leads_socket(socket: WebSocket):
+    await hub.join(socket)
+    try:
+        await hub.keep(socket)
+    finally:
+        await hub.leave(socket)

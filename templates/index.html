@@ -96,7 +96,7 @@
         </div>
         <div class="tags">
           <span class="topic">{{ lead.topic }}</span>
-          <span class="badge u-{{ lead.urgency }}">{{ lead.urgency }}</span>
+          <span class="badge u-{{ lead.urgency }}">{{ urgency_ru.get(lead.urgency, lead.urgency) }}</span>
           <span class="badge status">{{ lead.status }}</span>
         </div>
         <div class="text">{{ lead.text }}</div>

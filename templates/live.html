@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Живая заявка · AI-CRM</title>
+  <meta name="description" content="Отправьте заявку слева и посмотрите справа, как её принимает и размечает ИИ: тема, срочность и черновик ответа за несколько секунд.">
+  <meta property="og:title" content="Живая заявка · AI-CRM">
+  <meta property="og:description" content="Слева вы клиент, справа владелец бизнеса. Видно, что происходит с заявкой после отправки.">
+  <meta property="og:type" content="website">
+  <style>
+    /* ── Токены ──────────────────────────────────────────────────────────────
+       Один акцент на всю страницу: синий. Красный, янтарный и серый это не второй
+       акцент, а семантика срочности, и всегда идут вместе с текстовой подписью.
+       Радиусы: панели 14, карточки 12, поля 8, чипы полные. Другие не заводим.  */
+    :root {
+      --bg: #f6f6f4;
+      --surface: #ffffff;
+      --surface-sunk: #f1f1ee;
+      --line: #e4e4df;
+      /* Граница элементов управления. WCAG 1.4.11 требует 3:1, и мерить надо по
+         самому светлому фону, на котором элемент стоит: на --bg вкладки, на белом
+         поля формы. 3.13:1 и 3.38:1 соответственно. */
+      --line-strong: #8c8c85;
+
+      --ink: #17171a;
+      --ink-2: #4d4d55;
+      --ink-3: #6d6d77;   /* 4.52:1 на утопленном фоне: подсказки это тоже текст */
+
+      --accent: #2563eb;
+      --accent-ink: #ffffff;
+      --accent-soft: #eaf0fe;
+
+      --high: #b02a33;
+      --high-bg: #fbecec;
+      --medium: #8a5a10;
+      --medium-bg: #f8f0e0;
+      --low: #4c5560;
+      --low-bg: #eef0f2;
+
+      --r-panel: 14px;
+      --r-card: 12px;
+      --r-field: 8px;
+
+      --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
+      --sp-5: 24px; --sp-6: 32px; --sp-7: 48px;
+
+      --sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --mono: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+
+      --enter: 240ms cubic-bezier(0.16, 1, 0.3, 1);
+      --snap: 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    body, h1, h2, h3, p, ul, ol, li, figure, fieldset, legend { margin: 0; padding: 0; }
+    ul, ol { list-style: none; }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font: 16px/1.55 var(--sans);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+      border-radius: var(--r-field);
+    }
+
+    .skip {
+      position: absolute; left: var(--sp-4); top: -100px; z-index: 10;
+      padding: var(--sp-2) var(--sp-4); background: var(--surface);
+      border: 1px solid var(--line-strong); border-radius: var(--r-field);
+    }
+    .skip:focus { top: var(--sp-4); }
+
+    .wrap { max-width: 1180px; margin: 0 auto; padding: var(--sp-6) var(--sp-4) var(--sp-7); }
+
+    /* ── Шапка ───────────────────────────────────────────────────────────── */
+    .intro { max-width: 60ch; margin-bottom: var(--sp-6); }
+    .intro h1 { font-size: 28px; line-height: 1.2; letter-spacing: -0.02em; font-weight: 650; }
+    .intro p { margin-top: var(--sp-3); color: var(--ink-2); }
+
+    /* ── Раскладка ───────────────────────────────────────────────────────── */
+    .panes { display: grid; gap: var(--sp-4); }
+    @media (min-width: 900px) {
+      .panes { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+    }
+
+    .pane {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--r-panel);
+      padding: var(--sp-5);
+    }
+    .pane > header { margin-bottom: var(--sp-4); }
+    .role { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
+    .pane h2 { margin-top: var(--sp-1); font-size: 18px; font-weight: 620; letter-spacing: -0.01em; }
+    .pane header p { margin-top: var(--sp-2); font-size: 14px; color: var(--ink-2); }
+
+    /* ── Переключатель на мобильном ──────────────────────────────────────── */
+    .tabs { display: flex; gap: var(--sp-2); margin-bottom: var(--sp-4); }
+    .tab {
+      flex: 1; font: inherit; font-size: 14px; font-weight: 550;
+      padding: 10px var(--sp-3); min-height: 44px;
+      background: var(--surface); color: var(--ink-2);
+      border: 1px solid var(--line-strong); border-radius: var(--r-field);
+      cursor: pointer; transition: background var(--snap), color var(--snap), border-color var(--snap);
+    }
+    .tab[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    .tab .count {
+      display: inline-block; min-width: 20px; margin-left: 6px; padding: 0 6px;
+      font-family: var(--mono); font-size: 12px; border-radius: 999px;
+      background: var(--surface-sunk); color: var(--ink-2);
+    }
+    .tab[aria-selected="true"] .count { background: rgba(255,255,255,0.22); color: var(--accent-ink); }
+    @media (min-width: 900px) { .tabs { display: none; } }
+    @media (max-width: 899px) { .pane[hidden] { display: none; } }
+
+    /* ── Форма ───────────────────────────────────────────────────────────── */
+    .field { display: grid; gap: var(--sp-2); margin-bottom: var(--sp-4); }
+    .field label { font-size: 14px; font-weight: 550; }
+    .field .hint { font-size: 13px; color: var(--ink-3); }
+    .field input, .field select, .field textarea {
+      font: inherit; width: 100%; min-height: 44px; padding: 10px var(--sp-3);
+      color: var(--ink); background: var(--surface);
+      border: 1px solid var(--line-strong); border-radius: var(--r-field);
+      transition: border-color var(--snap), box-shadow var(--snap);
+    }
+    .field textarea { min-height: 96px; resize: vertical; line-height: 1.5; }
+    .field input::placeholder, .field textarea::placeholder { color: var(--ink-3); }
+    .field input:hover, .field select:hover, .field textarea:hover { border-color: #6f6f6b; }
+    .field :is(input, select, textarea):focus-visible {
+      border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+    .field [aria-invalid="true"] { border-color: var(--high); }
+    .error { font-size: 13px; color: var(--high); }
+    .error:empty { display: none; }
+
+    .send {
+      font: inherit; font-size: 15px; font-weight: 570;
+      width: 100%; min-height: 46px; padding: 11px var(--sp-5);
+      color: var(--accent-ink); background: var(--accent);
+      border: 1px solid var(--accent); border-radius: var(--r-field);
+      cursor: pointer; transition: background var(--snap), transform var(--snap);
+    }
+    .send:hover:not(:disabled) { background: #1d55d0; }
+    .send:active:not(:disabled) { transform: scale(0.985); }
+    .send:disabled { opacity: 0.55; cursor: progress; }
+
+    .note {
+      margin-top: var(--sp-3); font-size: 13px; color: var(--ink-3);
+    }
+    .formerror {
+      margin-top: var(--sp-3); padding: var(--sp-3);
+      font-size: 14px; color: var(--high);
+      background: var(--high-bg); border-radius: var(--r-field);
+    }
+    .formerror:empty { display: none; }
+
+    /* ── Лента ───────────────────────────────────────────────────────────── */
+    .feedhead { display: flex; align-items: baseline; gap: var(--sp-3); }
+    /* На узком экране счёт уже стоит на вкладке, второй раз он только шумит. */
+    .feedhead .total { display: none; margin-left: auto; font-family: var(--mono); font-size: 13px; color: var(--ink-3); }
+    @media (min-width: 900px) { .feedhead .total { display: block; } }
+
+    .feed { display: grid; gap: var(--sp-3); }
+
+    .card {
+      background: var(--surface); border: 1px solid var(--line);
+      border-radius: var(--r-card); padding: var(--sp-4);
+    }
+    .card.fresh { animation: arrive var(--enter) both; }
+    @keyframes arrive {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    .card .top { display: flex; align-items: baseline; gap: var(--sp-2); }
+    .card .who { font-weight: 600; font-size: 15px; }
+    .card .contact { font-family: var(--mono); font-size: 12.5px; color: var(--ink-3); }
+    .card .at { margin-left: auto; font-family: var(--mono); font-size: 12px; color: var(--ink-3); }
+    .card .body { margin-top: var(--sp-2); font-size: 14px; color: var(--ink-2); }
+
+    .marks { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); margin-top: var(--sp-3); }
+    .topic { font-size: 13px; color: var(--ink-2); background: var(--surface-sunk); padding: 3px 10px; border-radius: 999px; }
+    .urgency { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; }
+    .urgency.high { color: var(--high); background: var(--high-bg); }
+    .urgency.medium { color: var(--medium); background: var(--medium-bg); }
+    .urgency.low { color: var(--low); background: var(--low-bg); }
+
+    .draft { margin-top: var(--sp-3); padding: var(--sp-3); background: var(--accent-soft); border-radius: var(--r-field); }
+    .draft .cap { font-size: 11px; font-weight: 620; letter-spacing: 0.05em; text-transform: uppercase; color: var(--accent); }
+    .draft p { margin-top: 6px; font-size: 13.5px; color: #1f2f4d; }
+
+    /* Разметка приезжает позже: место под неё занято сразу, чтобы карточка
+       не прыгала, когда ответ придёт. */
+    .waiting { margin-top: var(--sp-3); }
+    .waiting .line {
+      height: 12px; border-radius: 999px; background: var(--surface-sunk);
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    .waiting .line + .line { margin-top: var(--sp-2); }
+    .waiting .line.short { width: 42%; }
+    .waiting .said { margin-top: var(--sp-2); font-size: 13px; color: var(--ink-3); }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+
+    .failed { margin-top: var(--sp-3); font-size: 13px; color: var(--ink-3); }
+
+    .empty {
+      padding: var(--sp-6) var(--sp-4); text-align: center;
+      color: var(--ink-3); font-size: 14px;
+      background: var(--surface-sunk); border-radius: var(--r-card);
+    }
+    .empty b { display: block; margin-bottom: 6px; color: var(--ink-2); font-weight: 600; }
+
+    .live { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-3); }
+    .live .bulb { width: 7px; height: 7px; border-radius: 50%; background: var(--low); }
+    .live.on .bulb { background: #1f9254; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#feed">Перейти к ленте заявок</a>
+
+  <div class="wrap">
+    <div class="intro">
+      <h1>Живая заявка</h1>
+      <p>Слева вы клиент: отвечаете на четыре вопроса и отправляете заявку. Справа вы владелец бизнеса и видите, что происходит дальше. Заявка приходит сразу, разметка приезжает через несколько секунд.</p>
+    </div>
+
+    <div class="tabs" role="tablist" aria-label="Что показать">
+      <button class="tab" id="tab-quiz" role="tab" aria-selected="true" aria-controls="pane-quiz" type="button">Заявка</button>
+      <button class="tab" id="tab-feed" role="tab" aria-selected="false" aria-controls="pane-feed" type="button">
+        Входящие<span class="count" id="tabcount">{{ leads|length }}</span>
+      </button>
+    </div>
+
+    <div class="panes">
+      <section class="pane" id="pane-quiz" role="tabpanel" aria-labelledby="tab-quiz">
+        <header>
+          <p class="role">Вы клиент</p>
+          <h2>Оставьте заявку</h2>
+          <p>Отвечайте как есть, это демонстрационный стенд.</p>
+        </header>
+
+        <form id="quiz" novalidate>
+          <div class="field">
+            <label for="area">Чем занимаетесь</label>
+            <select id="area" name="area">
+              <option>Услуги: салон, студия, мастерская</option>
+              <option>Розница или интернет-магазин</option>
+              <option>Обучение и консультации</option>
+              <option>Строительство и ремонт</option>
+              <option>Другое</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="pain">Что съедает больше всего времени</label>
+            <select id="pain" name="pain">
+              <option>Отвечаю на одни и те же вопросы</option>
+              <option>Собираю заявки из разных мест</option>
+              <option>Записываю клиентов вручную</option>
+              <option>Считаю и выставляю документы</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="text">Опишите задачу</label>
+            <textarea id="text" name="text" required minlength="10" maxlength="1000"
+                      placeholder="Например: заявки приходят в директ и на почту, половину замечаю к вечеру"></textarea>
+            <p class="hint">От 10 знаков. Этот текст и прочитает модель.</p>
+            <p class="error" id="text-error" role="alert"></p>
+          </div>
+
+          <div class="field">
+            <label for="contact">Как с вами связаться</label>
+            <input id="contact" name="contact" type="text" autocomplete="tel" inputmode="text"
+                   placeholder="Телефон, почта или ник в телеграме">
+            <p class="hint">Необязательно. Стенд демонстрационный, никто не позвонит.</p>
+          </div>
+
+          <button class="send" id="send" type="submit">Отправить заявку</button>
+          <p class="formerror" id="formerror" role="alert"></p>
+          <p class="note">Заявку размечает языковая модель. Обычно это занимает 3 - 8 секунд.</p>
+        </form>
+      </section>
+
+      <section class="pane" id="pane-feed" role="tabpanel" aria-labelledby="tab-feed" hidden>
+        <header>
+          <div class="feedhead">
+            <div>
+              <p class="role">Вы владелец</p>
+              <h2>Входящие</h2>
+            </div>
+            <p class="total" id="total">{{ leads|length }}</p>
+          </div>
+          <p class="live" id="live"><span class="bulb" aria-hidden="true"></span><span id="livetext">Подключаюсь</span></p>
+        </header>
+
+        <ul class="feed" id="feed" aria-live="polite" aria-relevant="additions text">
+          {% for lead in leads %}
+          <li class="card" data-id="{{ lead.id }}">
+            <div class="top">
+              <span class="who">{{ lead.name or lead.contact or "Заявка со стенда" }}</span>
+              {% if lead.name and lead.contact %}<span class="contact">{{ lead.contact }}</span>{% endif %}
+              <span class="at">{{ lead.time }}</span>
+            </div>
+            <p class="body">{{ lead.text }}</p>
+            {% if lead.topic %}
+            <div class="marks">
+              <span class="topic">{{ lead.topic }}</span>
+              {% if lead.urgency %}<span class="urgency {{ lead.urgency }}">срочность: {{ urgency_ru.get(lead.urgency, lead.urgency) }}</span>{% endif %}
+            </div>
+            {% endif %}
+            {% if lead.draft %}
+            <div class="draft"><p class="cap">Черновик ответа</p><p>{{ lead.draft }}</p></div>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+
+        <div class="empty" id="empty" {% if leads %}hidden{% endif %}>
+          <b>Пока пусто</b>
+          Отправьте заявку слева, и она появится здесь.
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+  (() => {
+    'use strict';
+    const $ = (id) => document.getElementById(id);
+
+    const feed = $('feed'), empty = $('empty'), total = $('total'), tabcount = $('tabcount');
+    const form = $('quiz'), send = $('send'), formerror = $('formerror');
+    const textField = $('text'), textError = $('text-error');
+
+    /* ── Переключатель. На широком экране обе панели видны всегда, поэтому
+          скрывать по вкладкам нужно только на узком. ────────────────────── */
+    const wide = window.matchMedia('(min-width: 900px)');
+    const tabs = [
+      { tab: $('tab-quiz'), pane: $('pane-quiz') },
+      { tab: $('tab-feed'), pane: $('pane-feed') },
+    ];
+
+    function showTab(index) {
+      tabs.forEach(({ tab, pane }, i) => {
+        const on = i === index;
+        tab.setAttribute('aria-selected', String(on));
+        if (!wide.matches) pane.hidden = !on;
+      });
+    }
+    function applyWidth() {
+      if (wide.matches) {
+        tabs.forEach(({ pane }) => { pane.hidden = false; });
+      } else {
+        showTab(tabs.findIndex(({ tab }) => tab.getAttribute('aria-selected') === 'true'));
+      }
+    }
+    tabs.forEach(({ tab }, i) => tab.addEventListener('click', () => showTab(i)));
+    wide.addEventListener('change', applyWidth);
+    applyWidth();
+
+    /* ── Отрисовка карточки ──────────────────────────────────────────────── */
+    // Модель отвечает служебными словами. Показывать их человеку незачем.
+    const URGENCY = { high: 'высокая', medium: 'средняя', low: 'низкая' };
+
+    function put(parent, tag, cls, text) {
+      const node = document.createElement(tag);
+      if (cls) node.className = cls;
+      if (text != null) node.textContent = text;   // текст приходит от людей и от модели
+      parent.appendChild(node);
+      return node;
+    }
+
+    function marks(card, lead) {
+      card.querySelectorAll('.marks, .draft, .waiting, .failed').forEach((n) => n.remove());
+
+      if (!lead.topic && !lead.draft) {
+        const wait = put(card, 'div', 'waiting');
+        put(wait, 'div', 'line');
+        put(wait, 'div', 'line short');
+        put(wait, 'p', 'said', 'Модель читает заявку');
+        return;
+      }
+      if (lead.topic) {
+        const row = put(card, 'div', 'marks');
+        put(row, 'span', 'topic', lead.topic);
+        if (URGENCY[lead.urgency]) {
+          put(row, 'span', 'urgency ' + lead.urgency, 'срочность: ' + URGENCY[lead.urgency]);
+        }
+      }
+      if (lead.draft) {
+        const draft = put(card, 'div', 'draft');
+        put(draft, 'p', 'cap', 'Черновик ответа');
+        put(draft, 'p', null, lead.draft);
+      }
+    }
+
+    function render(lead, fresh) {
+      let card = feed.querySelector('[data-id="' + lead.id + '"]');
+      if (!card) {
+        card = document.createElement('li');
+        card.className = 'card' + (fresh ? ' fresh' : '');
+        card.dataset.id = lead.id;
+
+        // Имя квиз не спрашивает, поэтому заголовком становится то, что есть:
+        // имя, иначе контакт, иначе честное «со стенда». «Без имени» на каждой
+        // карточке выглядит как поломка, хотя это норма.
+        const top = put(card, 'div', 'top');
+        put(top, 'span', 'who', lead.name || lead.contact || 'Заявка со стенда');
+        if (lead.name && lead.contact) put(top, 'span', 'contact', lead.contact);
+        put(top, 'span', 'at', lead.time);
+        put(card, 'p', 'body', lead.text);
+
+        feed.prepend(card);
+        empty.hidden = true;
+        const count = feed.children.length;
+        total.textContent = count;
+        tabcount.textContent = count;
+      }
+      marks(card, lead);
+    }
+
+    function failed(id) {
+      const card = feed.querySelector('[data-id="' + id + '"]');
+      if (!card) return;
+      card.querySelectorAll('.waiting').forEach((n) => n.remove());
+      put(card, 'p', 'failed', 'Разметить не удалось, заявка сохранена целиком.');
+    }
+
+    /* ── Связь. Обрыв это не ошибка: вкладка могла провисеть ночь. ────────── */
+    const live = $('live'), livetext = $('livetext');
+    let socket = null, retry = 1000, everConnected = false;
+
+    function connect() {
+      const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
+      socket = new WebSocket(scheme + '://' + location.host + '/ws/leads');
+
+      socket.addEventListener('open', () => {
+        retry = 1000;
+        everConnected = true;
+        live.classList.add('on');
+        livetext.textContent = 'Обновляется само';
+      });
+      socket.addEventListener('message', (e) => {
+        const { event, data } = JSON.parse(e.data);
+        if (event === 'lead.new') render(data, true);
+        else if (event === 'lead.marked') render(data, false);
+        else if (event === 'lead.failed') failed(data.id);
+      });
+      socket.addEventListener('close', () => {
+        live.classList.remove('on');
+        // Пока ни разу не подключились, это ещё не потеря связи, а попытка.
+        livetext.textContent = everConnected
+          ? 'Связь прервалась, восстанавливаю'
+          : 'Живое обновление недоступно, обновите страницу';
+        setTimeout(connect, retry);
+        retry = Math.min(retry * 2, 15000);   // не долбим сервер, если он лежит
+      });
+    }
+    connect();
+
+    /* ── Отправка ────────────────────────────────────────────────────────── */
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      formerror.textContent = '';
+      textError.textContent = '';
+      textField.removeAttribute('aria-invalid');
+
+      const text = textField.value.trim();
+      if (text.length < 10) {
+        textError.textContent = 'Опишите задачу хотя бы одним предложением.';
+        textField.setAttribute('aria-invalid', 'true');
+        textField.focus();
+        return;
+      }
+
+      send.disabled = true;
+      send.textContent = 'Отправляю';
+      try {
+        const response = await fetch('/api/quiz', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: $('area').value + '. ' + $('pain').value + '. ' + text,
+            contact: $('contact').value.trim() || null,
+            source: 'демо',
+          }),
+        });
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          throw new Error(body.detail || 'Не получилось отправить. Попробуйте ещё раз.');
+        }
+        form.reset();
+        if (!wide.matches) showTab(1);          // на телефоне сразу показываем результат
+      } catch (err) {
+        formerror.textContent = err.message;
+      } finally {
+        send.disabled = false;
+        send.textContent = 'Отправить заявку';
+      }
+    });
+  })();
+  </script>
+</body>
+</html>
