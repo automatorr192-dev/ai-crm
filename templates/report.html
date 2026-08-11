@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Отчёт{% endblock %}
+
+{% block styles %}
+    .cards { display: grid; gap: 12px; margin-bottom: 16px; }
+    @media (min-width: 700px) { .cards { grid-template-columns: repeat(4, 1fr); } }
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-card); padding: 16px; }
+    .card b { display: block; font-size: 24px; font-weight: 640; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+    .card span { font-size: 12.5px; color: var(--ink-3); }
+    .card .hint { font-size: 12px; color: var(--ink-3); margin-top: 6px; }
+
+    .bar-row { display: grid; grid-template-columns: 110px 1fr 56px; align-items: center; gap: 10px; padding: 5px 0; }
+    .bar-row .name { font-size: 13.5px; color: var(--ink-2); }
+    .track { background: var(--panel); border-radius: var(--r-pill); height: 9px; overflow: hidden; }
+    .fill { height: 100%; background: var(--accent); border-radius: var(--r-pill); }
+    .fill.won { background: var(--ok); }
+    .fill.lost { background: var(--line-strong); }
+    .bar-row .n { text-align: right; font-size: 13px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { text-align: left; font-size: 12.5px; font-weight: 600; color: var(--ink-3); padding: 6px 8px; border-bottom: 1px solid var(--line); }
+    td { padding: 9px 8px; border-bottom: 1px solid var(--line); }
+    td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    tr:last-child td { border-bottom: 0; }
+{% endblock %}
+
+{% block body %}
+<main class="wrap">
+  <div class="head-row">
+    <h1>Отчёт</h1>
+    <div class="filters" style="margin:0">
+      {% for period in [7, 30, 90] %}
+      <a class="chip-link" href="/report?days={{ period }}" aria-current="{{ 'true' if days == period else 'false' }}">
+        {{ period }} дней
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <b>{{ report.total }}</b>
+      <span>заявок за период</span>
+    </div>
+    <div class="card">
+      <b>{{ report.conversion }}%</b>
+      <span>дошли до сделки</span>
+    </div>
+    <div class="card">
+      <b>{{ '{:,.0f}'.format(report.in_work_amount).replace(',', ' ') }} ₽</b>
+      <span>сейчас в работе</span>
+      <p class="hint">сумма незакрытых сделок</p>
+    </div>
+    <div class="card">
+      {% if report.answer_minutes is not none %}
+      {# «0 мин» читается как сбой, а не как быстрый ответ. #}
+      <b>
+        {%- if report.answer_minutes >= 60 %}{{ report.answer_minutes // 60 }} ч
+        {%- elif report.answer_minutes < 1 %}меньше минуты
+        {%- else %}{{ report.answer_minutes }} мин{% endif -%}
+      </b>{% endif %}
+      {% if report.answer_minutes is not none %}
+      <span>до первого ответа</span>
+      <p class="hint">по {{ report.answered_count }} заявкам, где человек уже среагировал</p>
+      {% else %}
+      <b>—</b>
+      <span>до первого ответа</span>
+      <p class="hint">пока никто не отвечал</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <section class="panel">
+    <h2 style="margin-bottom:10px">Где стоят заявки</h2>
+    {% set peak = report.by_stage.values() | max if report.by_stage else 1 %}
+    {% for stage in stages %}
+    {% set value = report.by_stage.get(stage, 0) %}
+    <div class="bar-row">
+      <span class="name">{{ stage_ru[stage] }}</span>
+      <div class="track">
+        <div class="fill {% if stage == 'won' %}won{% elif stage == 'lost' %}lost{% endif %}"
+             style="width: {{ (value / peak * 100) | round if peak else 0 }}%"></div>
+      </div>
+      <span class="n">{{ value }}</span>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="panel">
+    <h2 style="margin-bottom:10px">Откуда приходят</h2>
+    {% if report.by_source %}
+    {% set top = report.by_source.values() | max %}
+    {% for source, value in report.by_source.items() %}
+    <div class="bar-row">
+      <span class="name">{{ source }}</span>
+      <div class="track"><div class="fill" style="width: {{ (value / top * 100) | round }}%"></div></div>
+      <span class="n">{{ value }}</span>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p class="muted">За период заявок не было.</p>
+    {% endif %}
+  </section>
+
+  <section class="panel">
+    <h2 style="margin-bottom:10px">Кто ведёт</h2>
+    <table>
+      <thead>
+        <tr><th>Сотрудник</th><th class="num">Заявок</th><th class="num">Сумма</th></tr>
+      </thead>
+      <tbody>
+        {% for name, count, total in report.by_user %}
+        <tr>
+          <td>{{ name }}</td>
+          <td class="num">{{ count }}</td>
+          <td class="num">{{ '{:,.0f}'.format(total).replace(',', ' ') if total else '—' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3" class="muted">Пока некого показывать.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+</main>
+{% endblock %}

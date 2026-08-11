@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Вход{% endblock %}
+
+{% block styles %}
+    .gate { min-height: 100dvh; display: grid; place-items: center; padding: 24px; }
+    .gate form { width: 100%; max-width: 340px; }
+    .gate .logo-big { font-size: 20px; font-weight: 660; letter-spacing: -.02em; margin-bottom: 4px; }
+    .gate .sub { color: var(--ink-3); font-size: 13.5px; margin-bottom: 22px; }
+    .gate .field { margin-bottom: 14px; }
+    .gate input { width: 100%; }
+    .gate .btn { width: 100%; justify-content: center; margin-top: 6px; }
+    .bad {
+      background: var(--high-bg); color: var(--high);
+      font-size: 13.5px; padding: 9px 12px; border-radius: var(--r-block); margin-bottom: 16px;
+    }
+{% endblock %}
+
+{% block body %}
+<main class="gate">
+  <form method="post" action="/login">
+    <div class="logo-big">AI-CRM</div>
+    <p class="sub">Заявки, клиенты и сделки в одном месте</p>
+
+    {% if error %}
+    {# Не уточняем, что именно не сошлось: подсказка «такого логина нет» помогает
+       перебирать пользователей, а человеку, который знает свой пароль, не нужна. #}
+    <p class="bad">Не подошли логин или пароль</p>
+    {% endif %}
+
+    <div class="field">
+      <label for="login">Логин</label>
+      <input id="login" name="login" autocomplete="username" autofocus required>
+    </div>
+    <div class="field">
+      <label for="password">Пароль</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required>
+    </div>
+
+    <input type="hidden" name="next" value="{{ next }}">
+    <button class="btn primary">Войти</button>
+  </form>
+</main>
+{% endblock %}

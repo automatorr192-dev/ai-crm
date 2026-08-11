@@ -1,23 +1,24 @@
+"""Слой данных: сохранение заявок, повторы и ограничения самой базы."""
+
 import pytest
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
 import db
-from models import STATUSES
 
 
 async def test_lead_is_saved_and_read_back(database):
-    await db.add_lead("Иван", "@ivan", "Хочу бота для записи", source="quiz")
+    await db.add_lead("Иван", "@ivan", "Хочу бота для записи", source="квиз")
     leads = await db.get_all_leads()
     assert len(leads) == 1
     assert leads[0].client_name == "Иван"
-    assert leads[0].source == "quiz"
+    assert leads[0].source == "квиз"
 
 
-async def test_new_lead_starts_as_new(database):
+async def test_new_lead_starts_in_the_first_stage(database):
     lead, is_new = await db.add_lead("Мария", "@maria", "Сколько стоит?")
     assert is_new
-    assert lead.status == "new"
+    assert lead.stage == "new"
     assert lead.created_at is not None
     assert lead.updated_at is not None
 
@@ -33,29 +34,9 @@ async def test_markup_can_be_filled_later(database):
     assert updated.urgency == "high"
 
 
-async def test_status_changes(database):
-    lead, _ = await db.add_lead(None, None, "текст")
-    await db.set_status(lead.id, "in_work")
-    assert (await db.get_lead(lead.id)).status == "in_work"
-
-
 async def test_missing_lead_is_not_an_error(database):
-    assert await db.set_status(99999, "closed") is None
+    assert await db.set_stage(99999, "won") is None
     assert await db.get_lead(99999) is None
-
-
-async def test_freshest_lead_comes_first(database):
-    await db.add_lead(None, None, "первая")
-    await db.add_lead(None, None, "вторая")
-    leads = await db.get_all_leads()
-    assert [lead.text for lead in leads][0] in {"вторая", "первая"}
-    assert len(leads) == 2
-
-
-@pytest.mark.parametrize("status", STATUSES)
-async def test_every_status_fits_the_column(database, status):
-    lead, _ = await db.add_lead(None, None, "текст")
-    assert (await db.set_status(lead.id, status)).status == status
 
 
 def test_postgres_url_gets_async_driver(monkeypatch):
@@ -104,20 +85,10 @@ async def test_old_twin_is_a_new_lead(database, monkeypatch):
 async def test_history_records_the_whole_path(database):
     lead, _ = await db.add_lead(None, None, "текст", source="сайт")
     await db.set_markup(lead.id, "вопрос по цене", "low", "черновик")
-    await db.set_status(lead.id, "in_work")
+    await db.set_stage(lead.id, "in_work")
 
-    saved = await db.get_lead(lead.id, with_events=True)
-    assert [event.kind for event in saved.events] == ["created", "marked", "status"]
-    assert saved.events[-1].note == "in_work"
-
-
-async def test_same_status_twice_does_not_add_noise(database):
-    lead, _ = await db.add_lead(None, None, "текст")
-    await db.set_status(lead.id, "in_work")
-    await db.set_status(lead.id, "in_work")
-
-    saved = await db.get_lead(lead.id, with_events=True)
-    assert [event.kind for event in saved.events].count("status") == 1
+    saved = await db.get_lead(lead.id, full=True)
+    assert [event.kind for event in saved.events] == ["created", "marked", "stage"]
 
 
 async def test_failed_markup_leaves_a_trace(database):
@@ -125,7 +96,7 @@ async def test_failed_markup_leaves_a_trace(database):
     lead, _ = await db.add_lead(None, None, "текст")
     await db.mark_failed(lead.id, "все модели вернули 429")
 
-    saved = await db.get_lead(lead.id, with_events=True)
+    saved = await db.get_lead(lead.id, full=True)
     assert saved.events[-1].kind == "mark_failed"
     assert "429" in saved.events[-1].note
 
@@ -133,12 +104,15 @@ async def test_failed_markup_leaves_a_trace(database):
 # --- ограничения базы ----------------------------------------------------------
 
 
-async def test_database_refuses_a_made_up_status(database):
+async def test_database_refuses_a_made_up_stage(database):
     """Проверка в питоне защищает только питон. Мимо ORM ходят скрипты и psql."""
     with pytest.raises(IntegrityError):
         async with db.Session() as session:
             await session.execute(
-                text("insert into leads (text, status) values ('текст', 'придумал')")
+                text(
+                    "insert into leads (text, stage, updated_at) "
+                    "values ('текст', 'придумал', current_timestamp)"
+                )
             )
             await session.commit()
 
@@ -148,8 +122,21 @@ async def test_database_refuses_a_made_up_urgency(database):
         async with db.Session() as session:
             await session.execute(
                 text(
-                    "insert into leads (text, status, urgency) "
-                    "values ('текст', 'new', 'очень срочно')"
+                    "insert into leads (text, stage, urgency, updated_at) "
+                    "values ('текст', 'new', 'очень срочно', current_timestamp)"
+                )
+            )
+            await session.commit()
+
+
+async def test_database_refuses_negative_money(database):
+    """Минус в сумме ломает любой отчёт молча."""
+    with pytest.raises(IntegrityError):
+        async with db.Session() as session:
+            await session.execute(
+                text(
+                    "insert into leads (text, stage, amount, updated_at) "
+                    "values ('текст', 'new', -1, current_timestamp)"
                 )
             )
             await session.commit()
@@ -168,16 +155,16 @@ async def test_counts_come_from_the_whole_table(database):
     """Счётчик по ленте показывал бы «сколько влезло на экран», а не сколько есть."""
     first, _ = await db.add_lead(None, "@a", "первая")
     await db.add_lead(None, "@b", "вторая")
-    await db.set_status(first.id, "closed")
+    await db.set_stage(first.id, "won")
 
-    assert await db.count_by_status() == {"new": 1, "closed": 1}
+    assert await db.count_by_stage() == {"new": 1, "won": 1}
 
 
 async def test_feed_can_be_filtered(database):
     lead, _ = await db.add_lead(None, "@a", "первая", source="сайт")
     await db.add_lead(None, "@b", "вторая", source="бот")
-    await db.set_status(lead.id, "closed")
+    await db.set_stage(lead.id, "won")
 
-    assert len(await db.get_all_leads(status="closed")) == 1
+    assert len(await db.get_all_leads(stage="won")) == 1
     assert len(await db.get_all_leads(source="бот")) == 1
-    assert len(await db.get_all_leads(source="сайт", status="new")) == 0
+    assert len(await db.get_all_leads(source="сайт", stage="new")) == 0

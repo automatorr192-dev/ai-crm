@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Заявки{% endblock %}
+
+{% block styles %}
+    .search { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+    .search input[type=search] { flex: 1 1 260px; }
+
+    .rows { display: flex; flex-direction: column; gap: 8px; }
+    .row {
+      display: block; text-decoration: none;
+      background: var(--surface); border: 1px solid var(--line);
+      border-radius: var(--r-card); padding: 14px 16px;
+      transition: border-color var(--fast);
+    }
+    .row:hover { border-color: var(--line-strong); }
+    .row-top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    .row-who { font-weight: 600; }
+    .row-contact { font-family: var(--mono); font-size: 12.5px; color: var(--ink-3); }
+    .row-time { margin-left: auto; font-family: var(--mono); font-size: 12px; color: var(--ink-3); }
+    .row-text { color: var(--ink-2); font-size: 14px; margin-top: 7px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .row-foot { display: flex; align-items: center; gap: 7px; margin-top: 10px; flex-wrap: wrap; }
+    .row-foot .who { margin-left: auto; font-size: 12px; color: var(--ink-3); }
+    .stage-tag { font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: var(--r-block); background: var(--accent-soft); color: var(--accent); }
+    .stage-won { background: var(--ok-bg); color: var(--ok); }
+    .stage-lost { background: var(--low-bg); color: var(--low); }
+
+    @media (max-width: 560px) {
+      .row-top { display: grid; grid-template-columns: 1fr auto; column-gap: 10px; }
+      .row-who { grid-area: 1 / 1; }
+      .row-time { grid-area: 1 / 2; margin-left: 0; }
+      .row-contact { grid-area: 2 / 1 / 3 / 3; }
+    }
+{% endblock %}
+
+{% block body %}
+<main class="wrap">
+  <div class="head-row">
+    <h1>Заявки</h1>
+    <span class="muted">{{ leads | length }} на экране</span>
+  </div>
+
+  <form class="search" method="get" action="/leads">
+    <input type="search" name="search" value="{{ filters.search }}"
+           placeholder="Поиск по тексту, имени, контакту или теме">
+    {% if filters.stage %}<input type="hidden" name="stage" value="{{ filters.stage }}">{% endif %}
+    {% if filters.assignee_id %}<input type="hidden" name="assignee_id" value="{{ filters.assignee_id }}">{% endif %}
+    <button class="btn">Найти</button>
+    {% if filters.search %}<a class="btn quiet" href="/leads">Сбросить</a>{% endif %}
+  </form>
+
+  <div class="filters">
+    <a class="chip-link" href="/leads" aria-current="{{ 'true' if not filters.stage and not filters.overdue else 'false' }}">
+      все <b>{{ counts.values() | sum }}</b>
+    </a>
+    {% for stage in stages %}
+    <a class="chip-link" href="/leads?stage={{ stage }}"
+       aria-current="{{ 'true' if filters.stage == stage else 'false' }}">
+      {{ stage_ru[stage] }} <b>{{ counts.get(stage, 0) }}</b>
+    </a>
+    {% endfor %}
+    <a class="chip-link" href="/leads?overdue=true" aria-current="{{ 'true' if filters.overdue else 'false' }}">
+      просроченные
+    </a>
+  </div>
+
+  <div class="rows">
+    {% for lead in leads %}
+    <a class="row" href="/leads/{{ lead.id }}">
+      <div class="row-top">
+        <span class="row-who">{{ lead.title }}</span>
+        {% if lead.client_contact and lead.client_name %}
+        <span class="row-contact">{{ lead.client_contact }}</span>
+        {% endif %}
+        <span class="row-time">{{ lead.created_local }}</span>
+      </div>
+      <p class="row-text">{{ lead.text }}</p>
+      <div class="row-foot">
+        <span class="stage-tag {% if lead.stage == 'won' %}stage-won{% elif lead.stage == 'lost' %}stage-lost{% endif %}">
+          {{ stage_ru[lead.stage] }}
+        </span>
+        {% if lead.topic %}
+        <span class="tag">{{ lead.topic }}</span>
+        <span class="urg u-{{ lead.urgency }}"><i aria-hidden="true"></i>{{ urgency_ru.get(lead.urgency, lead.urgency) }}</span>
+        {% endif %}
+        {% if lead.amount %}<span class="money">{{ '{:,.0f}'.format(lead.amount).replace(',', ' ') }} ₽</span>{% endif %}
+        {% if lead.overdue %}<span class="overdue">просрочено</span>{% endif %}
+        {% if lead.assignee %}<span class="who">{{ lead.assignee.name }}</span>{% endif %}
+      </div>
+    </a>
+    {% else %}
+    <div class="empty">
+      <h2>Ничего не нашлось</h2>
+      <p>
+        {% if filters.search %}
+          По запросу «{{ filters.search }}» заявок нет. Попробуйте короче или сбросьте фильтры.
+        {% else %}
+          Как только форма или интеграция пришлёт заявку, она появится здесь сама —
+          страницу обновлять не нужно.
+        {% endif %}
+      </p>
+    </div>
+    {% endfor %}
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Новая заявка приезжает в открытый список без перезагрузки — но только если человек
+  // не смотрит отфильтрованную выборку, куда она могла и не попасть.
+  const PLAIN_LIST = {{ (not filters.stage and not filters.search and not filters.overdue) | tojson }};
+  window.onCrmEvent.push((kind) => {
+    if (kind === 'lead.new' && PLAIN_LIST) say('Новая заявка — обновите список');
+  });
+</script>
+{% endblock %}

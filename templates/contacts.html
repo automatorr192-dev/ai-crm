@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Клиенты{% endblock %}
+
+{% block styles %}
+    .people { display: grid; gap: 8px; }
+    @media (min-width: 760px) { .people { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); } }
+    .person {
+      display: block; text-decoration: none;
+      background: var(--surface); border: 1px solid var(--line);
+      border-radius: var(--r-card); padding: 14px 16px;
+      transition: border-color var(--fast);
+    }
+    .person:hover { border-color: var(--line-strong); }
+    .person b { font-size: 15px; }
+    .person .c { font-family: var(--mono); font-size: 12.5px; color: var(--ink-3); display: block; margin-top: 3px; }
+    .person .n { font-size: 13px; color: var(--ink-2); margin-top: 8px; }
+    .search { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .search input { flex: 1 1 260px; }
+{% endblock %}
+
+{% block body %}
+<main class="wrap">
+  <div class="head-row">
+    <h1>Клиенты</h1>
+    <span class="muted">{{ contacts | length }} человек</span>
+  </div>
+
+  <form class="search" method="get" action="/contacts">
+    <input type="search" name="search" value="{{ search }}" placeholder="Имя или контакт">
+    <button class="btn">Найти</button>
+    {% if search %}<a class="btn quiet" href="/contacts">Сбросить</a>{% endif %}
+  </form>
+
+  <div class="people">
+    {% for person in contacts %}
+    <a class="person" href="/contacts/{{ person.id }}">
+      <b>{{ person.title }}</b>
+      {% if person.contact and person.name %}<span class="c">{{ person.contact }}</span>{% endif %}
+      <p class="n">
+        {{ person.leads | length }}
+        {%- if person.leads | length % 10 == 1 and person.leads | length % 100 != 11 %} обращение
+        {%- elif 2 <= person.leads | length % 10 <= 4 and not 12 <= person.leads | length % 100 <= 14 %} обращения
+        {%- else %} обращений{% endif %}
+        {%- set won = person.leads | selectattr('stage', 'equalto', 'won') | list | length %}
+        {%- if won %} · {{ won }} со сделкой{% endif %}
+      </p>
+    </a>
+    {% else %}
+    <div class="empty">
+      <h2>Клиентов пока нет</h2>
+      <p>Карточка клиента заводится сама, как только приходит первая заявка с его контактом.</p>
+    </div>
+    {% endfor %}
+  </div>
+</main>
+{% endblock %}

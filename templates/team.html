@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Команда{% endblock %}
+
+{% block styles %}
+    .person-row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-top: 1px solid var(--line); }
+    .person-row:first-of-type { border-top: 0; }
+    .person-row b { font-size: 14.5px; }
+    .person-row .login { font-family: var(--mono); font-size: 12.5px; color: var(--ink-3); }
+    .role { margin-left: auto; font-size: 12px; padding: 2px 9px; border-radius: var(--r-block); background: var(--panel); border: 1px solid var(--line); color: var(--ink-2); }
+    .role.admin { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
+    .off { opacity: .55; }
+    .form-grid { display: grid; gap: 12px; }
+    @media (min-width: 700px) { .form-grid { grid-template-columns: repeat(4, 1fr); align-items: end; } }
+    .form-grid input, .form-grid select { width: 100%; }
+    .bad { background: var(--high-bg); color: var(--high); font-size: 13.5px; padding: 9px 12px; border-radius: var(--r-block); margin-bottom: 14px; }
+{% endblock %}
+
+{% block body %}
+<main class="wrap narrow">
+  <div class="head-row">
+    <h1>Команда</h1>
+    <span class="muted">{{ people | length }} человек</span>
+  </div>
+
+  <section class="panel">
+    {% for person in people %}
+    <div class="person-row {% if not person.active %}off{% endif %}">
+      <div>
+        <b>{{ person.name }}</b>
+        <div class="login">{{ person.login }}</div>
+      </div>
+      <span class="role {% if person.role == 'admin' %}admin{% endif %}">
+        {{ {'admin': 'владелец', 'manager': 'менеджер', 'viewer': 'только смотрит'}[person.role] }}
+      </span>
+    </div>
+    {% endfor %}
+  </section>
+
+  {% if me.role == 'admin' %}
+  <section class="panel">
+    <h2 style="margin-bottom:12px">Добавить сотрудника</h2>
+
+    {% if error == 'short' %}
+    <p class="bad">Пароль короче восьми символов — такой подбирается за минуты</p>
+    {% elif error == 'taken' %}
+    <p class="bad">Такой логин уже занят</p>
+    {% endif %}
+
+    <form class="form-grid" method="post" action="/team">
+      <div>
+        <label for="name">Имя</label>
+        <input id="name" name="name" required placeholder="Ирина">
+      </div>
+      <div>
+        <label for="login">Логин</label>
+        <input id="login" name="login" required placeholder="irina" autocomplete="off">
+      </div>
+      <div>
+        <label for="password">Пароль</label>
+        <input id="password" name="password" type="password" required minlength="8" autocomplete="new-password">
+      </div>
+      <div>
+        <label for="role">Права</label>
+        <select id="role" name="role">
+          <option value="manager">менеджер</option>
+          <option value="viewer">только смотрит</option>
+          <option value="admin">владелец</option>
+        </select>
+      </div>
+      <button class="btn primary">Добавить</button>
+    </form>
+  </section>
+  {% else %}
+  <p class="muted">Сотрудников заводит владелец.</p>
+  {% endif %}
+</main>
+{% endblock %}

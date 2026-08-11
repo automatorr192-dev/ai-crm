@@ -4,25 +4,20 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AI-CRM — заявки разбираются сами</title>
-  <meta name="description" content="Заявка приходит с сайта, из бота или почты, а через несколько секунд уже лежит в одной ленте: с темой, срочностью и черновиком ответа. Живая демонстрация — заполните форму и посмотрите на панель.">
+  <meta name="description" content="Заявки с сайта, из мессенджеров и почты собираются в одну воронку. Модель читает каждую и подписывает тему, срочность и черновик ответа. Клиенты, сделки, сроки и отчёт — в одном месте.">
   <meta property="og:title" content="AI-CRM — заявки разбираются сами">
-  <meta property="og:description" content="Заявка приходит, модель размечает её за секунды, вы отвечаете по готовому черновику. Попробуйте на живой демонстрации.">
+  <meta property="og:description" content="Одна воронка вместо директа, почты и блокнота. Модель размечает заявки, вы отвечаете по готовому черновику.">
   <meta property="og:type" content="website">
   <style>
     /*
-      Страница продукта, а не витрина технологии. Тон спокойный: обещания проверяются
-      тут же, на живом экране справа, поэтому громкие слова были бы лишними.
-
       Цвет: одна committed-краска — глубокий хвойный — держит весь верх страницы,
-      светлая полоса начинается там, где начинается работа (форма). Смена фона и есть
-      навигация: тёмное — рассказ, светлое — действие.
+      светлая полоса начинается там, где начинается действие. Смена фона и есть
+      навигация: тёмное — рассказ, светлое — форма.
     */
     :root {
       --deep: #0c231f;
       --deep-2: #123029;
       --deep-line: #21453c;
-      /* Рамка панели может быть тихой, а рамка кнопки — нет: у кнопки-призрака это
-         единственный признак того, что она кнопка. 3.15:1 к фону. */
       --deep-line-btn: #3a7768;
       --paper: #f4f4f1;
       --paper-2: #ffffff;
@@ -59,28 +54,32 @@
 
     :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
 
-    .band { padding: clamp(48px, 8vw, 96px) 24px; }
+    .band { padding: clamp(44px, 7vw, 88px) 24px; }
     .band.dark { background: var(--deep); color: var(--on-deep); }
     .in { max-width: 1080px; margin: 0 auto; }
-    .narrow { max-width: 640px; }
+
+    /* --- шапка --- */
+
+    .top { position: absolute; top: 0; left: 0; right: 0; }
+    .top-in {
+      max-width: 1080px; margin: 0 auto; padding: 20px 24px;
+      display: flex; align-items: center; gap: 16px;
+    }
+    .brand { font-weight: 660; letter-spacing: -.02em; color: var(--on-deep); text-decoration: none; }
+    .top .enter {
+      margin-left: auto; font-size: 14px; color: var(--on-deep); text-decoration: none;
+      border: 1px solid var(--deep-line-btn); border-radius: 999px; padding: 7px 16px;
+      transition: border-color 140ms var(--ease), color 140ms var(--ease);
+    }
+    .top .enter:hover { border-color: var(--accent); color: var(--accent); }
 
     /* --- герой --- */
 
-    .hero { display: grid; gap: clamp(36px, 6vw, 64px); align-items: center; }
+    .hero { display: grid; gap: clamp(32px, 5vw, 60px); align-items: center; padding-top: 40px; }
     @media (min-width: 900px) { .hero { grid-template-columns: 1fr 1fr; } }
 
-    .kicker {
-      display: inline-block;
-      font-size: 13px;
-      color: var(--accent);
-      border: 1px solid var(--deep-line-btn);
-      border-radius: 999px;
-      padding: 4px 12px;
-      margin-bottom: 20px;
-    }
-
     h1 {
-      font-size: clamp(34px, 5.4vw, 58px);
+      font-size: clamp(34px, 5.2vw, 56px);
       line-height: 1.06;
       letter-spacing: -.03em;
       font-weight: 660;
@@ -96,17 +95,10 @@
 
     .cta-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 30px; }
     .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font: inherit;
-      font-size: 15px;
-      font-weight: 550;
-      padding: 12px 22px;
-      border-radius: 999px;
-      border: 1px solid transparent;
-      cursor: pointer;
-      text-decoration: none;
+      display: inline-flex; align-items: center; gap: 8px;
+      font: inherit; font-size: 15px; font-weight: 550;
+      padding: 12px 22px; border-radius: 999px;
+      border: 1px solid transparent; cursor: pointer; text-decoration: none;
       transition: transform 140ms var(--ease), background 140ms var(--ease), border-color 140ms var(--ease);
     }
     .btn:active { transform: scale(.98); }
@@ -115,189 +107,85 @@
     .btn-ghost { border-color: var(--deep-line-btn); color: var(--on-deep); }
     .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
 
-    /* --- живая карточка в герое --- */
+    /* --- окно воронки --- */
 
-    .stage {
-      background: var(--deep-2);
-      border: 1px solid var(--deep-line);
-      border-radius: var(--r);
-      padding: 18px;
-    }
-    .stage-top {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 12.5px;
-      color: var(--on-deep-2);
-      margin-bottom: 14px;
-    }
-    .stage-top i { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
-    .replay {
-      margin-left: auto;
-      font: inherit;
-      font-size: 12.5px;
-      background: none;
-      border: 0;
-      color: var(--accent);
-      cursor: pointer;
-      padding: 2px 4px;
-    }
+    .screen { background: var(--deep-2); border: 1px solid var(--deep-line); border-radius: var(--r); padding: 16px; }
+    .screen-top { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--on-deep-2); margin-bottom: 12px; }
+    .screen-top i { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
 
-    .demo-card {
-      background: #0a1c19;
-      border: 1px solid var(--deep-line);
-      border-radius: var(--r-sm);
-      padding: 15px 16px;
+    .mini-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .mini-col { background: #0a1c19; border: 1px solid var(--deep-line); border-radius: var(--r-sm); padding: 9px; min-height: 132px; }
+    .mini-col h3 { font-size: 11px; font-weight: 600; color: var(--on-deep-2); margin-bottom: 8px; letter-spacing: .01em; }
+    .mini-card {
+      background: #123029; border-radius: 6px; padding: 8px 9px; margin-bottom: 6px;
+      transition: transform 260ms var(--ease);
     }
-    .demo-head { display: flex; align-items: baseline; gap: 9px; }
-    .demo-name { font-weight: 600; font-size: 15px; }
-    .demo-contact { font-family: var(--mono); font-size: 12px; color: var(--on-deep-2); }
-    .demo-time { margin-left: auto; font-family: var(--mono); font-size: 12px; color: var(--on-deep-2); }
-    .demo-text { margin-top: 10px; font-size: 14.5px; color: #cfe0da; }
+    .mini-card b { display: block; font-size: 12.5px; font-weight: 600; }
+    .mini-card span { display: block; font-size: 11px; color: var(--on-deep-2); margin-top: 3px; }
+    .mini-card .sum { color: var(--accent); font-variant-numeric: tabular-nums; margin-top: 5px; font-size: 11.5px; }
+    .mini-card.moving { animation: hop 700ms var(--ease); }
+    @keyframes hop { from { opacity: 0; transform: translateY(-10px) scale(.96); } to { opacity: 1; transform: none; } }
 
-    .demo-marks { display: flex; gap: 6px; margin-top: 12px; min-height: 26px; align-items: center; }
-    .pill {
-      font-size: 12px;
-      padding: 3px 9px;
-      border-radius: var(--r-sm);
-      background: #16362f;
-      color: #b6d6cd;
-    }
-    .pill.urgent { background: #3d2024; color: var(--high); font-weight: 600; }
+    /* --- что умеет --- */
 
-    .demo-draft {
-      margin-top: 12px;
-      background: #10302b;
-      border-radius: var(--r-sm);
-      padding: 11px 13px;
-      font-size: 13.5px;
-      color: #d5e8e2;
-    }
-    .demo-draft b {
-      display: block;
-      font-size: 10.5px;
-      letter-spacing: .07em;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 5px;
-      font-weight: 700;
-    }
+    .rows { display: grid; gap: 30px; margin-top: 36px; }
+    @media (min-width: 760px) { .rows { grid-template-columns: repeat(3, 1fr); gap: 34px; } }
+    .row h3 { font-size: 16.5px; font-weight: 620; letter-spacing: -.01em; margin-bottom: 7px; }
+    .row p { color: var(--ink-2); font-size: 15px; }
+    .row .mark { display: block; width: 26px; height: 2px; background: var(--accent-deep); margin-bottom: 14px; }
 
-    .skel { height: 10px; border-radius: 5px; background: #1b3d36; }
-    .skel + .skel { margin-top: 7px; }
-    .skel.short { width: 40%; }
-    .thinking { font-size: 12.5px; color: var(--on-deep-2); margin-bottom: 8px; }
-    .fade-in { animation: fade 260ms var(--ease); }
-    @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-    .breathe { animation: breathe 1.4s ease-in-out infinite; }
-    @keyframes breathe { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
-
-    /* --- как работает --- */
-
-    .steps { counter-reset: step; display: grid; gap: 28px; margin-top: 40px; }
-    @media (min-width: 760px) { .steps { grid-template-columns: repeat(3, 1fr); gap: 36px; } }
-
-    .step { counter-increment: step; }
-    .step::before {
-      content: counter(step);
-      display: block;
-      font-family: var(--mono);
-      font-size: 13px;
-      color: var(--accent-deep);
-      margin-bottom: 10px;
-    }
-    .step h3 { font-size: 17px; font-weight: 620; letter-spacing: -.01em; margin-bottom: 7px; }
-    .step p { color: var(--ink-2); font-size: 15px; }
-
-    h2 {
-      font-size: clamp(25px, 3.4vw, 34px);
-      letter-spacing: -.02em;
-      font-weight: 650;
-      text-wrap: balance;
-    }
+    h2 { font-size: clamp(25px, 3.4vw, 34px); letter-spacing: -.02em; font-weight: 650; text-wrap: balance; }
     .sub { margin-top: 12px; color: var(--ink-2); max-width: 58ch; }
     .band.dark .sub { color: var(--on-deep-2); }
 
     /* --- форма --- */
 
-    .form-grid { display: grid; gap: clamp(28px, 5vw, 56px); align-items: start; }
+    .form-grid { display: grid; gap: clamp(26px, 5vw, 54px); align-items: start; }
     @media (min-width: 900px) { .form-grid { grid-template-columns: 0.9fr 1.1fr; } }
 
-    form.try {
-      background: var(--paper-2);
-      border: 1px solid var(--line);
-      border-radius: var(--r);
-      padding: clamp(20px, 3vw, 28px);
-    }
-
+    form.ask { background: var(--paper-2); border: 1px solid var(--line); border-radius: var(--r); padding: clamp(20px, 3vw, 28px); }
     .field { margin-bottom: 16px; }
     label { display: block; font-size: 13.5px; font-weight: 560; margin-bottom: 6px; }
     .hint { font-weight: 400; color: var(--ink-3); }
 
     input, textarea {
-      width: 100%;
-      font: inherit;
-      font-size: 15px;
-      color: var(--ink);
-      background: var(--paper-2);
-      border: 1px solid var(--line-strong);
-      border-radius: var(--r-sm);
-      padding: 11px 13px;
+      width: 100%; font: inherit; font-size: 15px; color: var(--ink);
+      background: var(--paper-2); border: 1px solid var(--line-strong);
+      border-radius: var(--r-sm); padding: 11px 13px;
       transition: border-color 140ms var(--ease), box-shadow 140ms var(--ease);
     }
     input:hover, textarea:hover { border-color: var(--ink-3); }
     input:focus, textarea:focus {
-      outline: none;
-      border-color: var(--accent-deep);
+      outline: none; border-color: var(--accent-deep);
       box-shadow: 0 0 0 3px rgba(13, 107, 98, .14);
     }
     textarea { resize: vertical; min-height: 108px; }
     ::placeholder { color: var(--ink-3); }
 
-    /* Ловушка для ботов: человек этого поля не видит и не может сфокусировать. */
+    /* Поле, которого человек не видит и не может сфокусировать. */
     .trap { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 
-    .send {
-      width: 100%;
-      justify-content: center;
-      background: var(--accent-deep);
-      color: #fff;
-      margin-top: 4px;
-    }
+    .send { width: 100%; justify-content: center; background: var(--accent-deep); color: #fff; margin-top: 4px; }
     .send:hover:not(:disabled) { background: #0f7d72; }
     .send:disabled { opacity: .6; cursor: progress; }
-
     .note { margin-top: 14px; font-size: 13px; color: var(--ink-3); }
 
-    .result { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 18px; }
-    .result h3 { font-size: 16px; font-weight: 620; margin-bottom: 6px; }
-    .result p { font-size: 14.5px; color: var(--ink-2); }
-    .result .btn { margin-top: 14px; background: var(--accent-deep); color: #fff; }
+    .done { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 18px; }
+    .done h3 { font-size: 16px; font-weight: 620; margin-bottom: 6px; }
+    .done p { font-size: 14.5px; color: var(--ink-2); }
     .error { color: #96242c; font-size: 14.5px; margin-top: 14px; }
 
-    .aside h2 { margin-bottom: 14px; }
     .facts { list-style: none; display: grid; gap: 14px; margin-top: 26px; }
     .facts li { padding-left: 20px; position: relative; color: var(--ink-2); font-size: 15px; }
     .facts li::before {
-      content: "";
-      position: absolute;
-      left: 0;
-      top: 9px;
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--accent-deep);
+      content: ""; position: absolute; left: 0; top: 9px;
+      width: 7px; height: 7px; border-radius: 50%; background: var(--accent-deep);
     }
     .facts b { color: var(--ink); font-weight: 600; }
 
-    footer {
-      border-top: 1px solid var(--line);
-      padding: 32px 24px 48px;
-      font-size: 14px;
-      color: var(--ink-3);
-    }
-    footer a { color: var(--ink-2); }
+    footer { border-top: 1px solid var(--line); padding: 30px 24px 46px; font-size: 14px; color: var(--ink-3); }
     footer .in { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; }
+    footer a { color: var(--ink-2); }
     footer .right { margin-left: auto; }
 
     @media (prefers-reduced-motion: reduce) {
@@ -311,39 +199,61 @@
 </head>
 <body>
 
+  <header class="top">
+    <div class="top-in">
+      <a class="brand" href="/">AI-CRM</a>
+      <a class="enter" id="enter-top" href="#start">Войти</a>
+    </div>
+  </header>
+
   <section class="band dark">
     <div class="in hero">
       <div>
-        <span class="kicker">живая демонстрация</span>
-        <h1>Заявки перестают теряться между директом, почтой и формой</h1>
+        <h1>Заявки перестают теряться между директом, почтой и блокнотом</h1>
         <p class="lead-in">
-          Всё, что присылают клиенты, попадает в одну ленту. Модель читает заявку и
-          дописывает тему, срочность и черновик ответа — раньше, чем вы успеваете
+          Всё, что присылают клиенты, попадает в одну воронку. Модель читает заявку и
+          подписывает тему, срочность и черновик ответа — раньше, чем вы успеваете
           открыть вкладку.
         </p>
         <div class="cta-row">
-          <a class="btn btn-main" href="#try">Оставить заявку и посмотреть</a>
-          <a class="btn btn-ghost" id="panel-link" href="#try">Открыть панель</a>
+          <a class="btn btn-main" href="#start">Оставить заявку</a>
+          <a class="btn btn-ghost" id="enter" href="#start">Войти в систему</a>
         </div>
       </div>
 
-      <div class="stage" aria-label="Как заявка выглядит в панели">
-        <div class="stage-top">
-          <i aria-hidden="true"></i> панель приёма заявок
-          <button class="replay" type="button" id="replay">повторить</button>
-        </div>
-        <article class="demo-card">
-          <div class="demo-head">
-            <span class="demo-name">Полина</span>
-            <span class="demo-contact">@polina</span>
-            <span class="demo-time">10:24</span>
+      <div class="screen" aria-label="Воронка сделок">
+        <div class="screen-top"><i aria-hidden="true"></i> воронка сделок</div>
+        <div class="mini-board">
+          <div class="mini-col">
+            <h3>Новые</h3>
+            <div id="slot-new">
+              <div class="mini-card">
+                <b>Полина</b>
+                <span>хочет бота для записи</span>
+              </div>
+            </div>
           </div>
-          <p class="demo-text">
-            Здравствуйте! Нужен бот для записи на маникюр, у нас две мастерицы.
-            Очень надо до конца недели, запись ведём в тетради и уже путаемся.
-          </p>
-          <div id="stage-body"></div>
-        </article>
+          <div class="mini-col">
+            <h3>В работе</h3>
+            <div id="slot-work">
+              <div class="mini-card">
+                <b>Тимур</b>
+                <span>вопрос по цене</span>
+                <span class="sum">60 000 ₽</span>
+              </div>
+            </div>
+          </div>
+          <div class="mini-col">
+            <h3>Сделка</h3>
+            <div id="slot-won">
+              <div class="mini-card">
+                <b>Анна</b>
+                <span>интеграция с amoCRM</span>
+                <span class="sum">120 000 ₽</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -352,51 +262,54 @@
     <div class="in">
       <h2>Что происходит с заявкой</h2>
       <p class="sub">
-        Три шага, между которыми проходит пара секунд. Человек подключается на последнем.
+        От прихода до сделки — в одном месте, без переписывания в блокнот и таблицу.
       </p>
-      <div class="steps">
-        <div class="step">
+      <div class="rows">
+        <div class="row">
+          <span class="mark" aria-hidden="true"></span>
           <h3>Приходит и сразу сохраняется</h3>
           <p>
-            Форма, бот или интеграция отдают заявку в одну точку. Она записывается
-            до того, как к ней притронется модель: если ИИ недоступен, заявка всё равно
-            на месте.
+            Форма на сайте, бот или интеграция отдают заявку в одну точку. Она
+            записывается до того, как к ней притронется модель.
           </p>
         </div>
-        <div class="step">
-          <h3>Размечается моделью</h3>
+        <div class="row">
+          <span class="mark" aria-hidden="true"></span>
+          <h3>Размечается и попадает в воронку</h3>
           <p>
-            Тема, срочность и черновик ответа. Разметка идёт фоном, поэтому отправитель
-            получает ответ мгновенно и не присылает заявку повторно.
+            Тема, срочность и черновик ответа появляются за секунды. Карточка встаёт
+            в первую колонку и ждёт ответственного.
           </p>
         </div>
-        <div class="step">
-          <h3>Ждёт вас в ленте</h3>
+        <div class="row">
+          <span class="mark" aria-hidden="true"></span>
+          <h3>Доводится до сделки</h3>
           <p>
-            Срочное видно сразу, ответ не нужно придумывать с нуля — черновик лежит
-            рядом и копируется одной кнопкой. Остаётся поправить и отправить.
+            Стадия, сумма, срок следующего звонка и комментарии команды. Повторные
+            обращения собираются в карточке клиента сами.
           </p>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="band" id="try" style="background: var(--paper-2); border-top: 1px solid var(--line);">
+  <section class="band" id="start" style="background: var(--paper-2); border-top: 1px solid var(--line);">
     <div class="in form-grid">
-      <div class="aside">
-        <h2>Попробуйте прямо сейчас</h2>
+      <div>
+        <h2>Расскажите про свои заявки</h2>
         <p class="sub">
-          Заявка уйдёт в настоящую панель на другом сервере — том же, что работал бы
-          у вас. Через пару секунд вы увидите её там уже разобранной.
+          Напишите, откуда они приходят и что теряется. Отвечу в течение дня и покажу,
+          как это будет выглядеть у вас.
         </p>
         <ul class="facts">
-          <li><b>Форма и панель живут раздельно.</b> Сайт — статика, панель — сервис со своей базой. Упадёт одно — второе продолжит работать.</li>
-          <li><b>Повторная отправка не плодит дубли.</b> Одинаковая заявка в течение пяти минут считается той же самой.</li>
-          <li><b>Панель закрыта паролем.</b> Открытая витрина показывает только заявки с этой формы.</li>
+          <li><b>Воронка вместо списка.</b> Видно, где стоит каждая сделка и сколько денег в работе.</li>
+          <li><b>Клиент не теряется.</b> Повторные обращения собираются под одной карточкой с историей.</li>
+          <li><b>Отчёт без выгрузок.</b> Конверсия, источники заявок и время до первого ответа.</li>
+          <li><b>Команда с правами.</b> Владелец, менеджеры и те, кому нужен только просмотр.</li>
         </ul>
       </div>
 
-      <form class="try" id="form" novalidate>
+      <form class="ask" id="form" novalidate>
         <div class="field">
           <label for="name">Как вас зовут <span class="hint">— необязательно</span></label>
           <input id="name" name="name" autocomplete="name" maxlength="200" placeholder="Полина">
@@ -410,7 +323,7 @@
         <div class="field">
           <label for="text">Что нужно сделать</label>
           <textarea id="text" name="text" maxlength="5000" required
-                    placeholder="Например: теряем заявки из директа, хотим собирать их в одном месте"></textarea>
+                    placeholder="Например: заявки приходят в директ и на почту, половину теряем"></textarea>
         </div>
 
         <div class="trap" aria-hidden="true">
@@ -418,11 +331,8 @@
           <input id="company" name="company" tabindex="-1" autocomplete="off">
         </div>
 
-        <button class="btn send" type="submit" id="send">Отправить заявку</button>
-        <p class="note">
-          Это демонстрация: заявка попадёт на открытую страницу панели. Не пишите здесь
-          ничего личного — для настоящего разговора есть телеграм внизу страницы.
-        </p>
+        <button class="btn send" type="submit" id="send">Отправить</button>
+        <p class="note">Отвечаю сам, без рассылок и звонков роботом.</p>
 
         <div id="result" hidden></div>
       </form>
@@ -431,65 +341,53 @@
 
   <footer>
     <div class="in">
-      <span>AI-CRM — учебно-выставочный проект</span>
-      <a class="right" href="https://t.me/automatorrr">Написать в телеграм</a>
+      <span>AI-CRM</span>
+      <a class="right" href="https://t.me/automatorrr">Телеграм</a>
     </div>
   </footer>
 
   <script>
     /*
-      Адрес панели. Сайт и сервис живут на разных доменах, поэтому он задаётся здесь
-      явно — при переезде панели правится одна строка, а не десяток мест.
-      Локально это тот же компьютер, в бою — домен сервиса.
+      Адрес системы. Сайт и сервис живут на разных доменах, поэтому он задаётся здесь
+      явно — при переезде правится одна строка, а не десяток мест.
     */
     const CRM = location.hostname === 'localhost' || location.hostname === '127.0.0.1'
       ? 'http://127.0.0.1:8000'
-      : 'https://ai-crm.example';   // заменить на боевой адрес панели
+      : 'https://ai-crm.example';   // заменить на боевой адрес
 
-    document.getElementById('panel-link').href = CRM + '/demo';
+    document.getElementById('enter').href = CRM + '/login';
+    document.getElementById('enter-top').href = CRM + '/login';
 
-    /* --- демонстрация в герое --------------------------------------------- */
+    /* --- воронка в шапке ---------------------------------------------------- */
 
-    const stage = document.getElementById('stage-body');
+    // Карточка переезжает из «Новых» в «В работе» и обратно: показывает, что доска
+    // живая, не требуя от посетителя ничего нажимать.
+    const fromCol = document.getElementById('slot-new');
+    const toCol = document.getElementById('slot-work');
+    const card = fromCol.firstElementChild;
 
-    function waitingView() {
-      stage.innerHTML =
-        '<div class="demo-marks"><span class="thinking">модель читает заявку</span></div>' +
-        '<div class="breathe"><div class="skel"></div><div class="skel short"></div></div>';
+    function hop() {
+      const target = card.parentElement === fromCol ? toCol : fromCol;
+      target.append(card);
+      card.classList.remove('moving');
+      void card.offsetWidth;
+      card.classList.add('moving');
     }
 
-    function markedView() {
-      stage.innerHTML =
-        '<div class="demo-marks fade-in">' +
-          '<span class="pill">хочет бота для записи</span>' +
-          '<span class="pill urgent">высокая срочность</span>' +
-        '</div>' +
-        '<div class="demo-draft fade-in"><b>черновик ответа</b>' +
-        'Полина, здравствуйте! Записи двух мастеров бот тянет спокойно, до конца недели ' +
-        'успеем. Напишу вам в телеграм, чтобы уточнить пару деталей.</div>';
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const watch = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting && !hop.timer) hop.timer = setInterval(hop, 3200);
+          else if (!entry.isIntersecting && hop.timer) {
+            clearInterval(hop.timer);
+            hop.timer = null;
+          }
+        });
+      }, { threshold: .4 });
+      watch.observe(document.querySelector('.mini-board'));
     }
 
-    let timer;
-    function play() {
-      clearTimeout(timer);
-      waitingView();
-      timer = setTimeout(markedView, 1900);
-    }
-
-    document.getElementById('replay').addEventListener('click', play);
-
-    // Показываем сразу готовое состояние, а проигрываем сцену только когда её видно:
-    // человек, пришедший по якорю к форме, иначе увидел бы пустой скелет.
-    markedView();
-    const seen = new IntersectionObserver((entries, observer) => {
-      if (entries.some(e => e.isIntersecting)) {
-        observer.disconnect();
-        if (!matchMedia('(prefers-reduced-motion: reduce)').matches) play();
-      }
-    }, { threshold: .5 });
-    seen.observe(stage.closest('.stage'));
-
-    /* --- отправка формы ---------------------------------------------------- */
+    /* --- форма -------------------------------------------------------------- */
 
     const form = document.getElementById('form');
     const send = document.getElementById('send');
@@ -504,7 +402,7 @@
       event.preventDefault();
       const text = form.text.value.trim();
       if (!text) {
-        show('<p class="error">Напишите пару слов о задаче — иначе размечать нечего.</p>');
+        show('<p class="error">Напишите пару слов о задаче.</p>');
         form.text.focus();
         return;
       }
@@ -526,26 +424,24 @@
         });
 
         if (response.status === 429) {
-          show('<p class="error">С одного адреса демонстрация принимает несколько заявок в час. ' +
+          show('<p class="error">Слишком много заявок с одного адреса. ' +
                'Загляните позже или напишите в телеграм.</p>');
           return;
         }
         if (!response.ok) throw new Error(response.status);
 
-        const lead = await response.json();
         show(
-          '<div class="result"><h3>Заявка ушла в панель</h3>' +
-          '<p>Сейчас её читает модель. Через пару секунд там появятся тема, срочность ' +
-          'и черновик ответа — можно смотреть, как это происходит.</p>' +
-          '<a class="btn" target="_blank" rel="noopener" href="' + CRM + '/demo">Открыть панель</a></div>'
+          '<div class="done"><h3>Заявка принята</h3>' +
+          '<p>Отвечу в течение дня — на тот контакт, который вы оставили. ' +
+          'Если нужно быстрее, напишите в телеграм внизу страницы.</p></div>'
         );
         form.reset();
       } catch {
-        show('<p class="error">Не получилось отправить: панель сейчас недоступна. ' +
-             'Попробуйте ещё раз или напишите в телеграм.</p>');
+        show('<p class="error">Не получилось отправить. Попробуйте ещё раз ' +
+             'или напишите в телеграм.</p>');
       } finally {
         send.disabled = false;
-        send.textContent = 'Отправить заявку';
+        send.textContent = 'Отправить';
       }
     });
   </script>

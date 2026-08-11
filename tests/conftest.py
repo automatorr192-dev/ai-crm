@@ -2,15 +2,18 @@ import os
 
 os.environ.setdefault("OPENROUTER_API_KEY", "test")
 os.environ["ADMIN_USER"] = "admin"
-os.environ["ADMIN_PASSWORD"] = "secret"
+os.environ["ADMIN_PASSWORD"] = "secret-secret"
 os.environ["WEBHOOK_SECRET"] = "shhh"
+os.environ["SESSION_SECRET"] = "test-session-secret"
 
 import asyncio  # noqa: E402
 
 import pytest  # noqa: E402
 from alembic import command  # noqa: E402
 from alembic.config import Config  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
 
+import app as app_module  # noqa: E402
 import db  # noqa: E402
 
 
@@ -37,3 +40,46 @@ async def database(tmp_path, monkeypatch):
 
     yield
     await engine.dispose()
+
+
+@pytest.fixture
+def client():
+    """Гость: не вошёл, ничего не видит."""
+    return TestClient(app_module.app)
+
+
+async def _sign_in(login: str, password: str) -> TestClient:
+    session = TestClient(app_module.app)
+    response = session.post(
+        "/login", data={"login": login, "password": password}, follow_redirects=False
+    )
+    assert response.status_code == 303, "вход не удался"
+    return session
+
+
+@pytest.fixture
+async def boss(database):
+    """Владелец: может всё."""
+    await db.create_user("boss", "Владелец", "very-secret", role="admin")
+    return await _sign_in("boss", "very-secret")
+
+
+@pytest.fixture
+async def manager(database):
+    await db.create_user("irina", "Ирина", "very-secret", role="manager")
+    return await _sign_in("irina", "very-secret")
+
+
+@pytest.fixture
+async def watcher(database):
+    """Наблюдатель: видит работу, но не вмешивается."""
+    await db.create_user("guest", "Гость", "very-secret", role="viewer")
+    return await _sign_in("guest", "very-secret")
+
+
+@pytest.fixture(autouse=True)
+def no_ai(monkeypatch):
+    """Ни один тест не должен ходить в модель за деньги."""
+    monkeypatch.setattr(app_module, "enrich", lambda lead_id: asyncio.sleep(0))
+    monkeypatch.setattr(app_module, "_seen", {})
+    monkeypatch.setattr(app_module, "_failures", {})

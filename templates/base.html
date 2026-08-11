@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>{% block title %}Заявки{% endblock %} · AI-CRM</title>
+  <style>
+    /*
+      Рабочая система, а не витрина: сюда заходят с телефона между делами и с ноутбука
+      вечером, поэтому тема следует за системной, а размеры фиксированные — «резиновая»
+      типографика в рабочем интерфейсе только мешает попадать по элементам.
+
+      Радиусы ровно три: 12 — карточка и панель, 8 — блок внутри, 999 — всё нажимаемое.
+      Акцент отвечает только за действия и текущий выбор. Срочность и стадии живут на
+      своих шкалах: слейся они с акцентом, «важно» и «нажми сюда» стали бы одним цветом.
+    */
+    :root {
+      --bg: #f7f7f6;
+      --surface: #ffffff;
+      --panel: #fbfbfa;
+      --line: #e3e3df;
+      --line-strong: #8b8b83;
+      --ink: #17171a;
+      --ink-2: #4a4a52;
+      --ink-3: #66666e;
+      --accent: #0d6b62;
+      --accent-ink: #ffffff;
+      --accent-soft: #e3f0ee;
+      --high: #a3232c;
+      --high-bg: #fbeaea;
+      --medium: #7a5210;
+      --medium-bg: #f8efde;
+      --low: #4f5760;
+      --low-bg: #eceff2;
+      --ok: #1f6b3a;
+      --ok-bg: #e6f2ea;
+      --shadow: 0 1px 2px rgba(20, 20, 25, .05), 0 8px 24px -18px rgba(20, 20, 25, .35);
+      --r-card: 12px;
+      --r-block: 8px;
+      --r-pill: 999px;
+      --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      --mono: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+      --fast: 160ms cubic-bezier(.2, .8, .2, 1);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #121214;
+        --surface: #1a1a1d;
+        --panel: #1f1f23;
+        --line: #2c2c31;
+        --line-strong: #6a6a74;
+        --ink: #f1f1f3;
+        --ink-2: #bcbcc4;
+        --ink-3: #92929c;
+        --accent: #4cbfae;
+        --accent-ink: #06231f;
+        --accent-soft: #17322e;
+        --high: #f08a8f;
+        --high-bg: #3a1e21;
+        --medium: #e0b46a;
+        --medium-bg: #352916;
+        --low: #a8b2bd;
+        --low-bg: #24262a;
+        --ok: #6cc38a;
+        --ok-bg: #17301f;
+        --shadow: 0 1px 2px rgba(0, 0, 0, .4);
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--ink);
+      font-size: 15px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+    a { color: inherit; }
+
+    /* --- навигация --- */
+
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: color-mix(in srgb, var(--bg) 90%, transparent);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--line);
+    }
+    .nav-in {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .logo {
+      font-weight: 660;
+      letter-spacing: -.02em;
+      margin-right: 12px;
+      text-decoration: none;
+      font-size: 16px;
+    }
+    .nav a.tab {
+      font-size: 14px;
+      padding: 6px 12px;
+      border-radius: var(--r-pill);
+      text-decoration: none;
+      color: var(--ink-2);
+      transition: background var(--fast), color var(--fast);
+    }
+    .nav a.tab:hover { background: var(--panel); color: var(--ink); }
+    .nav a.tab[aria-current="page"] { background: var(--accent-soft); color: var(--accent); font-weight: 550; }
+
+    .who-am-i { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--ink-3); }
+    .conn i { width: 7px; height: 7px; border-radius: 50%; background: var(--line-strong); display: inline-block; }
+    .conn.live i { background: var(--ok); }
+    .conn.down i { background: var(--high); }
+    .exit { font: inherit; font-size: 13.5px; background: none; border: 0; color: var(--ink-3); cursor: pointer; padding: 4px; }
+    .exit:hover { color: var(--ink); }
+
+    .wrap { max-width: 1240px; margin: 0 auto; padding: 22px 20px 80px; }
+    .narrow { max-width: 780px; }
+
+    h1 { font-size: 21px; font-weight: 640; letter-spacing: -.015em; }
+    h2 { font-size: 16px; font-weight: 620; letter-spacing: -.01em; }
+    .head-row { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+    .muted { color: var(--ink-3); font-size: 13.5px; }
+
+    /* --- элементы управления --- */
+
+    .btn {
+      font: inherit;
+      font-size: 14px;
+      padding: 8px 15px;
+      border-radius: var(--r-pill);
+      border: 1px solid var(--line-strong);
+      background: var(--surface);
+      color: var(--ink);
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      transition: border-color var(--fast), background var(--fast), transform var(--fast);
+    }
+    .btn:hover { border-color: var(--accent); color: var(--accent); }
+    .btn:active { transform: scale(.98); }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+    .btn.primary:hover { background: color-mix(in srgb, var(--accent) 85%, black); color: var(--accent-ink); }
+    .btn.quiet { border-color: transparent; background: transparent; color: var(--ink-3); }
+    .btn.quiet:hover { background: var(--panel); color: var(--ink); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    input, textarea, select {
+      font: inherit;
+      font-size: 14.5px;
+      color: var(--ink);
+      background: var(--surface);
+      border: 1px solid var(--line-strong);
+      border-radius: var(--r-block);
+      padding: 8px 11px;
+      max-width: 100%;
+      transition: border-color var(--fast), box-shadow var(--fast);
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+    }
+    textarea { resize: vertical; min-height: 76px; width: 100%; }
+    label { font-size: 13px; font-weight: 550; color: var(--ink-2); display: block; margin-bottom: 5px; }
+    ::placeholder { color: var(--ink-3); }
+
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+    .chip-link {
+      font-size: 13px;
+      padding: 6px 12px;
+      border-radius: var(--r-pill);
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink-2);
+      text-decoration: none;
+      display: inline-flex;
+      gap: 6px;
+      transition: border-color var(--fast), color var(--fast);
+    }
+    .chip-link:hover { border-color: var(--line-strong); color: var(--ink); }
+    .chip-link[aria-current="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 550; }
+    .chip-link b { font-weight: 500; opacity: .75; font-variant-numeric: tabular-nums; }
+
+    /* --- общие блоки --- */
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--r-card);
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+    .panel + .panel { margin-top: 14px; }
+
+    .urg { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: var(--r-block); }
+    .urg i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .u-high { color: var(--high); background: var(--high-bg); }
+    .u-medium { color: var(--medium); background: var(--medium-bg); }
+    .u-low { color: var(--low); background: var(--low-bg); }
+
+    .tag { font-size: 12px; color: var(--ink-2); background: var(--panel); border: 1px solid var(--line); padding: 2px 8px; border-radius: var(--r-block); }
+    .money { font-variant-numeric: tabular-nums; font-weight: 600; }
+    .overdue { color: var(--high); font-weight: 600; }
+
+    .empty {
+      border: 1px dashed var(--line-strong);
+      border-radius: var(--r-card);
+      padding: 40px 28px;
+      text-align: center;
+      color: var(--ink-2);
+    }
+    .empty h2 { margin-bottom: 8px; color: var(--ink); }
+
+    .toast {
+      position: fixed; left: 50%; bottom: 24px;
+      transform: translateX(-50%) translateY(8px);
+      background: var(--ink); color: var(--bg);
+      font-size: 13px; padding: 8px 16px; border-radius: var(--r-pill);
+      opacity: 0; pointer-events: none;
+      transition: opacity var(--fast), transform var(--fast);
+      z-index: 60;
+    }
+    .toast.on { opacity: 1; transform: translateX(-50%); }
+
+    @media (max-width: 640px) {
+      .wrap { padding: 16px 12px 72px; }
+      .nav-in { padding: 8px 12px; }
+      .logo { margin-right: 4px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+      }
+    }
+    {% block styles %}{% endblock %}
+  </style>
+</head>
+<body>
+  {% if not hide_nav %}
+  <nav class="nav">
+    <div class="nav-in">
+      <a class="logo" href="/">AI-CRM</a>
+      <a class="tab" href="/" {% if request.url.path == '/' %}aria-current="page"{% endif %}>Воронка</a>
+      <a class="tab" href="/leads" {% if request.url.path.startswith('/leads') %}aria-current="page"{% endif %}>Заявки</a>
+      <a class="tab" href="/contacts" {% if request.url.path.startswith('/contacts') %}aria-current="page"{% endif %}>Клиенты</a>
+      <a class="tab" href="/report" {% if request.url.path == '/report' %}aria-current="page"{% endif %}>Отчёт</a>
+      <a class="tab" href="/team" {% if request.url.path == '/team' %}aria-current="page"{% endif %}>Команда</a>
+
+      <div class="who-am-i">
+        <span class="conn" id="conn" title="живое обновление"><i aria-hidden="true"></i></span>
+        <span>{{ me.name }}</span>
+        <form method="post" action="/logout"><button class="exit">Выйти</button></form>
+      </div>
+    </div>
+  </nav>
+  {% endif %}
+
+  {% block body %}{% endblock %}
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    function say(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('on');
+      clearTimeout(say.timer);
+      say.timer = setTimeout(() => toast.classList.remove('on'), 2400);
+    }
+
+    {% if not hide_nav %}
+    /* Живое обновление: новая заявка и смена стадии доезжают до всех открытых вкладок.
+       Что делать с событием, решает страница — обработчики складываются сюда. */
+    window.onCrmEvent = [];
+
+    (function connect() {
+      const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
+      const socket = new WebSocket(scheme + '://' + location.host + '/ws/leads');
+      const dot = document.getElementById('conn');
+      let everOpen = false;
+
+      socket.onopen = () => { everOpen = true; dot.className = 'conn live'; };
+      socket.onmessage = event => {
+        const message = JSON.parse(event.data);
+        window.onCrmEvent.forEach(handler => handler(message.event, message.data));
+      };
+      socket.onclose = () => {
+        dot.className = everOpen ? 'conn down' : 'conn';
+        // Растущая пауза: сервер мог уйти на передеплой, и долбить его каждую секунду
+        // всеми открытыми вкладками — худшее, что можно сделать в этот момент.
+        connect.wait = Math.min((connect.wait || 1000) * 1.7, 30000);
+        setTimeout(connect, connect.wait);
+      };
+    })();
+    {% endif %}
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+{% block title %}{{ lead.title }}{% endblock %}
+
+{% block styles %}
+    .cols { display: grid; gap: 14px; align-items: start; }
+    @media (min-width: 900px) { .cols { grid-template-columns: 1.5fr 1fr; } }
+
+    .back { font-size: 13.5px; color: var(--ink-3); text-decoration: none; }
+    .back:hover { color: var(--ink); }
+
+    .who-line { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+    .contact-link { font-family: var(--mono); font-size: 13px; color: var(--ink-3); text-decoration: none; }
+    .contact-link:hover { color: var(--accent); }
+    .said { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink-2); margin-top: 12px; }
+
+    .marks { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; }
+
+    .draft { margin-top: 14px; background: var(--accent-soft); border-radius: var(--r-block); padding: 12px 14px; }
+    .draft-top { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+    .draft-label { font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--accent); }
+    .copy { margin-left: auto; font: inherit; font-size: 12.5px; padding: 3px 10px; border-radius: var(--r-pill); border: 0; background: transparent; color: var(--accent); cursor: pointer; }
+    .copy:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+    .draft-text { font-size: 14px; line-height: 1.55; }
+
+    .waiting { margin-top: 14px; font-size: 13.5px; color: var(--ink-3); }
+
+    .field-row { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+    .field-row form { display: flex; gap: 8px; align-items: center; flex: 1 1 auto; flex-wrap: wrap; }
+    .field-row select, .field-row input { flex: 1 1 130px; }
+    .field-label { font-size: 13px; color: var(--ink-3); flex: 0 0 96px; }
+
+    .stage-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
+    .stage-buttons button {
+      font: inherit; font-size: 13px; padding: 6px 12px; border-radius: var(--r-pill);
+      border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); cursor: pointer;
+      transition: border-color var(--fast), color var(--fast);
+    }
+    .stage-buttons button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+    .stage-buttons button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 550; cursor: default; }
+
+    .why { flex: 1 1 100%; margin-top: 10px; }
+    .why input { width: 100%; }
+    .why-buttons { display: flex; gap: 6px; margin-top: 8px; }
+    .why .confirm { border-color: var(--accent); color: var(--accent); }
+    .why .cancel { border-color: transparent; color: var(--ink-3); }
+
+    .note { border-top: 1px solid var(--line); padding: 11px 0; }
+    .note:first-of-type { border-top: 0; }
+    .note-top { display: flex; gap: 8px; font-size: 12.5px; color: var(--ink-3); margin-bottom: 4px; }
+    .note-text { white-space: pre-wrap; font-size: 14px; }
+
+    .event { display: flex; gap: 10px; font-size: 12.5px; color: var(--ink-3); padding: 3px 0; }
+    .event time { font-family: var(--mono); flex: 0 0 78px; }
+
+    .other { display: block; text-decoration: none; font-size: 13.5px; padding: 8px 0; border-top: 1px solid var(--line); color: var(--ink-2); }
+    .other:hover { color: var(--accent); }
+    .other span { color: var(--ink-3); font-size: 12.5px; }
+
+    .lost-note { margin-top: 10px; font-size: 13.5px; color: var(--ink-2); background: var(--low-bg); padding: 9px 12px; border-radius: var(--r-block); }
+{% endblock %}
+
+{% block body %}
+<main class="wrap">
+  <p style="margin-bottom:12px"><a class="back" href="/leads">← ко всем заявкам</a></p>
+
+  <div class="cols">
+    <div>
+      <section class="panel">
+        <div class="who-line">
+          <h1>{{ lead.title }}</h1>
+          {% if lead.client_contact %}
+          <a class="contact-link" id="contact" href="#">{{ lead.client_contact }}</a>
+          {% endif %}
+          <span class="muted" style="margin-left:auto">{{ lead.created_local }}</span>
+        </div>
+
+        <div class="marks">
+          {% if lead.topic %}
+          <span class="tag">{{ lead.topic }}</span>
+          <span class="urg u-{{ lead.urgency }}"><i aria-hidden="true"></i>{{ urgency_ru.get(lead.urgency, lead.urgency) }}</span>
+          {% endif %}
+          {% if lead.source %}<span class="muted">{{ lead.source }}</span>{% endif %}
+        </div>
+
+        <p class="said">{{ lead.text }}</p>
+
+        {% if lead.draft_reply %}
+        <div class="draft">
+          <div class="draft-top">
+            <span class="draft-label">черновик ответа</span>
+            <button class="copy" type="button" id="copy">Скопировать</button>
+          </div>
+          <p class="draft-text" id="draft">{{ lead.draft_reply }}</p>
+        </div>
+        {% else %}
+        <p class="waiting">Модель ещё не размечала эту заявку.</p>
+        {% endif %}
+
+        {% if lead.lost_reason %}
+        <p class="lost-note"><b>Причина отказа:</b> {{ lead.lost_reason }}</p>
+        {% endif %}
+      </section>
+
+      <section class="panel">
+        <h2 style="margin-bottom:12px">Комментарии</h2>
+        {% if me.can_edit %}
+        <form method="post" action="/leads/{{ lead.id }}/note" style="margin-bottom:14px">
+          <textarea name="text" required placeholder="Созвонились, ждёт смету до пятницы"></textarea>
+          <button class="btn primary" style="margin-top:8px">Добавить</button>
+        </form>
+        {% endif %}
+
+        {% for note in lead.notes %}
+        <div class="note">
+          <div class="note-top">
+            <b>{{ note.author.name if note.author else 'кто-то' }}</b>
+            <time>{{ note.created_local }}</time>
+          </div>
+          <p class="note-text">{{ note.text }}</p>
+        </div>
+        {% else %}
+        <p class="muted">Пока никто ничего не записал.</p>
+        {% endfor %}
+      </section>
+    </div>
+
+    <div>
+      <section class="panel">
+        <h2 style="margin-bottom:12px">Стадия</h2>
+        <form class="stage-buttons" method="post" action="/leads/{{ lead.id }}/stage" id="stage-form">
+          {% for stage in stages %}
+          <button name="stage" value="{{ stage }}"
+                  aria-pressed="{{ 'true' if stage == lead.stage else 'false' }}"
+                  {% if stage == lead.stage or not me.can_edit %}disabled{% endif %}>
+            {{ stage_ru[stage] }}
+          </button>
+          {% endfor %}
+
+          {# Причина отказа спрашивается ровно тогда, когда она нужна. Через полгода
+             «почему не купили» — единственное, ради чего проигранные сделки и хранят. #}
+          <div class="why" id="why" hidden>
+            <label for="lost_reason">Почему отказались</label>
+            <input id="lost_reason" name="lost_reason" maxlength="200"
+                   placeholder="дорого, выбрали другого, передумали">
+            <div class="why-buttons">
+              <button name="stage" value="lost" class="confirm">Записать отказ</button>
+              <button type="button" class="cancel" id="cancel-lost">Отмена</button>
+            </div>
+          </div>
+        </form>
+
+        {% if me.can_edit %}
+        <div style="margin-top:16px">
+          <div class="field-row">
+            <span class="field-label">Ответственный</span>
+            <form method="post" action="/leads/{{ lead.id }}/assignee">
+              <select name="assignee_id" onchange="this.form.submit()">
+                <option value="">не назначен</option>
+                {% for person in people %}
+                <option value="{{ person.id }}" {% if lead.assignee_id == person.id %}selected{% endif %}>
+                  {{ person.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </form>
+          </div>
+
+          <div class="field-row">
+            <span class="field-label">Сумма, ₽</span>
+            <form method="post" action="/leads/{{ lead.id }}/amount">
+              <input name="amount" inputmode="decimal" placeholder="например 45000"
+                     value="{{ '{:.0f}'.format(lead.amount) if lead.amount is not none else '' }}">
+              <button class="btn">Сохранить</button>
+            </form>
+          </div>
+
+          <div class="field-row">
+            <span class="field-label">Напомнить</span>
+            <form method="post" action="/leads/{{ lead.id }}/due">
+              <input type="datetime-local" name="due_at"
+                     value="{{ lead.due_at.strftime('%Y-%m-%dT%H:%M') if lead.due_at else '' }}">
+              <button class="btn">Сохранить</button>
+            </form>
+          </div>
+          {% if lead.overdue %}<p class="overdue" style="font-size:13.5px">Срок прошёл</p>{% endif %}
+        </div>
+        {% else %}
+        <p class="muted" style="margin-top:14px">
+          {% if lead.assignee %}Ведёт {{ lead.assignee.name }}.{% endif %}
+          {% if lead.amount %} Сумма {{ '{:,.0f}'.format(lead.amount).replace(',', ' ') }} ₽.{% endif %}
+        </p>
+        {% endif %}
+      </section>
+
+      {% if lead.contact %}
+      <section class="panel">
+        <h2 style="margin-bottom:6px">
+          <a href="/contacts/{{ lead.contact.id }}" style="text-decoration:none">{{ lead.contact.title }} →</a>
+        </h2>
+        {% set others = lead.contact.leads | rejectattr('id', 'equalto', lead.id) | list %}
+        {% if others %}
+        <p class="muted" style="margin-bottom:4px">Обращался раньше:</p>
+        {% for other in others[:5] %}
+        <a class="other" href="/leads/{{ other.id }}">
+          {{ other.topic or other.text[:60] }} <span>· {{ stage_ru[other.stage] }}</span>
+        </a>
+        {% endfor %}
+        {% else %}
+        <p class="muted">Первое обращение.</p>
+        {% endif %}
+      </section>
+      {% endif %}
+
+      <section class="panel">
+        <h2 style="margin-bottom:10px">История</h2>
+        {% for event in lead.events %}
+        <div class="event">
+          <time>{{ event.created_local }}</time>
+          <span>
+            {{ event_ru.get(event.kind, event.kind) }}{% if event.note %} · {{ event.note }}{% endif %}
+            {% if event.author %} ({{ event.author.name }}){% endif %}
+          </span>
+        </div>
+        {% endfor %}
+      </section>
+    </div>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  /* Отказ — единственная стадия, у которой спрашивают причину. Кнопка не отправляет
+     форму сразу, а раскрывает поле; без JS она отправит стадию без причины, и это
+     рабочее поведение, а не поломка. */
+  const why = document.getElementById('why');
+  const stageForm = document.getElementById('stage-form');
+
+  if (why && stageForm) {
+    stageForm.addEventListener('click', event => {
+      const button = event.target.closest('button[value="lost"]');
+      if (!button || button.classList.contains('confirm')) return;
+      event.preventDefault();
+      why.hidden = false;
+      document.getElementById('lost_reason').focus();
+    });
+
+    document.getElementById('cancel-lost').addEventListener('click', () => {
+      why.hidden = true;
+    });
+  }
+
+  /* Контакт превращаем в ссылку по его виду: телеграм, телефон или почта.
+     Разбор на клиенте, потому что вид контакта меняется чаще, чем шаблон. */
+  const contact = document.getElementById('contact');
+  if (contact) {
+    const value = contact.textContent.trim();
+    let href = null;
+    if (value.startsWith('@')) href = 'https://t.me/' + value.slice(1);
+    else if (/^\+?[\d\s()-]{7,}$/.test(value)) href = 'tel:' + value.replace(/[^\d+]/g, '');
+    else if (value.includes('@') && value.includes('.')) href = 'mailto:' + value;
+    if (href) {
+      contact.href = href;
+      if (href.startsWith('http')) { contact.target = '_blank'; contact.rel = 'noopener'; }
+    } else {
+      contact.removeAttribute('href');
+    }
+  }
+
+  const copy = document.getElementById('copy');
+  if (copy) {
+    copy.addEventListener('click', async () => {
+      const text = document.getElementById('draft').textContent.trim();
+      try {
+        await navigator.clipboard.writeText(text);
+        say('Черновик скопирован');
+      } catch {
+        // Буфер доступен не везде: без https и вне localhost браузер запрещает запись.
+        const range = document.createRange();
+        range.selectNodeContents(document.getElementById('draft'));
+        getSelection().removeAllRanges();
+        getSelection().addRange(range);
+        say('Скопируйте выделенное');
+      }
+    });
+  }
+</script>
+{% endblock %}

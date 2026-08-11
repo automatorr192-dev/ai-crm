@@ -1,18 +1,18 @@
-"""Сервис CRM: приём заявок и админка.
+"""Сервис CRM: приём заявок и рабочие экраны.
 
 Форма живёт не здесь. Она на сайте — своём домене, своей статике, своём деплое —
-и стучится сюда по сети, как стучалась бы форма на Тильде или чужой бот. Это не
-усложнение ради красоты: пока форма отдаётся тем же приложением, что и админка, любая
-починка админки требует передеплоя сайта, а падение сервиса уносит с собой и страницу,
-на которую клиент пришёл с рекламы.
+и стучится сюда по сети, как стучалась бы форма на Тильде или чужой бот. Пока форма
+отдаётся тем же приложением, что и CRM, любая починка CRM требует передеплоя страницы,
+на которую клиент пришёл с рекламы, а падение сервиса уносит эту страницу с собой.
 """
 
 import asyncio
 import json
 import os
-import secrets
 import time
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime
+from decimal import Decimal, InvalidOperation
 
 from alembic import command
 from alembic.config import Config
@@ -20,80 +20,39 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Form, HTTPException, Request, WebSocket, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field, ValidationError
 
+import auth
 import db
 import webhook
 from ai import analyze_lead
-from db import add_lead, count_by_status, get_all_leads, get_lead, set_markup, set_status
 from hub import hub
-from models import STATUSES, URGENCIES
+from models import STAGES, URGENCIES, User
 from observability import log, setup
 
 load_dotenv()
 setup()
 
-ADMIN_USER = os.environ.get("ADMIN_USER", "")
-ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
-security = HTTPBasic()
-
 # Модель отвечает служебными словами. В интерфейсе человек читает по-русски.
 URGENCY_RU = {"high": "высокая", "medium": "средняя", "low": "низкая"}
-STATUS_RU = {
-    "new": "новая",
-    "in_work": "в работе",
-    "answered": "отвечено",
-    "closed": "закрыта",
+STAGE_RU = {
+    "new": "Новые",
+    "in_work": "В работе",
+    "waiting": "Ждём ответа",
+    "won": "Сделка",
+    "lost": "Отказ",
 }
-
-
-# Подбор пароля: без задержки перебор идёт со скоростью сети. Считаем неудачи по адресу
-# и после порога отвечаем 429 — на живой вход это не влияет, счётчик обнуляется при успехе.
-MAX_FAILURES = int(os.environ.get("ADMIN_MAX_FAILURES", 10))
-LOCKOUT_SECONDS = int(os.environ.get("ADMIN_LOCKOUT_SECONDS", 300))
-_failures: dict[str, list[float]] = {}
-
-
-def _client_ip(request: Request) -> str:
-    return request.client.host if request.client else "?"
-
-
-def _too_many_failures(ip: str) -> bool:
-    now = time.time()
-    recent = [t for t in _failures.get(ip, []) if now - t < LOCKOUT_SECONDS]
-    _failures[ip] = recent
-    return len(recent) >= MAX_FAILURES
-
-
-def require_admin(request: Request, credentials: HTTPBasicCredentials = Depends(security)) -> str:
-    """В заявках лежат имена и контакты живых людей: отдавать их без пароля нельзя ни
-    в демо, ни тем более в проде. compare_digest — чтобы пароль нельзя было подобрать
-    по времени ответа."""
-    if not ADMIN_USER or not ADMIN_PASSWORD:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Админка не настроена")
-
-    ip = _client_ip(request)
-    if _too_many_failures(ip):
-        raise HTTPException(
-            status.HTTP_429_TOO_MANY_REQUESTS, "Слишком много попыток. Подожди пару минут."
-        )
-
-    # Сравниваем байты: compare_digest на не-ASCII строке падает TypeError, и вместо
-    # честного 401 админка отвечала бы 500 на логин с кириллицей.
-    ok = secrets.compare_digest(
-        credentials.username.encode(), ADMIN_USER.encode()
-    ) & secrets.compare_digest(credentials.password.encode(), ADMIN_PASSWORD.encode())
-    if not ok:
-        _failures.setdefault(ip, []).append(time.time())
-        raise HTTPException(
-            status.HTTP_401_UNAUTHORIZED,
-            "Неверный логин или пароль",
-            headers={"WWW-Authenticate": "Basic"},
-        )
-    _failures.pop(ip, None)
-    return credentials.username
+EVENT_RU = {
+    "created": "заявка принята",
+    "marked": "модель разметила",
+    "mark_failed": "разметка не удалась",
+    "stage": "стадия",
+    "assigned": "ответственный",
+    "note": "комментарий",
+    "due": "срок",
+    "amount": "сумма",
+}
 
 
 def migrate() -> None:
@@ -109,30 +68,10 @@ def migrate() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await asyncio.to_thread(migrate)
+    # Свежая система пуста, а завести сотрудника можно только войдя. Первый вход
+    # берётся из окружения и в базу попадает уже хешем.
+    await db.ensure_admin(os.environ.get("ADMIN_USER", ""), os.environ.get("ADMIN_PASSWORD", ""))
     yield
-
-
-def card(lead) -> dict:
-    """Одна форма заявки для вебсокета и для первой отрисовки страницы."""
-    return {
-        "id": lead.id,
-        "name": lead.client_name,
-        "contact": lead.client_contact,
-        "text": lead.text,
-        "topic": lead.topic,
-        "urgency": lead.urgency,
-        "draft": lead.draft_reply,
-        "status": lead.status,
-        "source": lead.source,
-        "time": lead.created_local,
-    }
-
-
-class LeadIn(BaseModel):
-    text: str = Field(min_length=1, max_length=5000)
-    name: str | None = Field(default=None, max_length=200)
-    contact: str | None = Field(default=None, max_length=200)
-    source: str | None = Field(default=None, max_length=60)
 
 
 app = FastAPI(title="AI-CRM", lifespan=lifespan)
@@ -154,87 +93,385 @@ if ALLOWED_ORIGINS:
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templates"))
 
 
+# --- вход ----------------------------------------------------------------------
+
+# Подбор пароля: без задержки перебор идёт со скоростью сети. Считаем неудачи по адресу
+# и после порога отвечаем 429 — на живой вход это не влияет, счётчик обнуляется при успехе.
+MAX_FAILURES = int(os.environ.get("ADMIN_MAX_FAILURES", 10))
+LOCKOUT_SECONDS = int(os.environ.get("ADMIN_LOCKOUT_SECONDS", 300))
+_failures: dict[str, list[float]] = {}
+
+
+def _client_ip(request: Request) -> str:
+    return request.client.host if request.client else "?"
+
+
+def _too_many_failures(ip: str) -> bool:
+    now = time.time()
+    recent = [t for t in _failures.get(ip, []) if now - t < LOCKOUT_SECONDS]
+    _failures[ip] = recent
+    return len(recent) >= MAX_FAILURES
+
+
+class NeedLogin(Exception):
+    pass
+
+
+async def maybe_user(request: Request) -> User | None:
+    user_id = auth.read_session(request.cookies.get(auth.SESSION_COOKIE))
+    if user_id is None:
+        return None
+    user = await db.get_user(user_id)
+    return user if user and user.active else None
+
+
+async def current_user(request: Request) -> User:
+    """Страницы за логином. Не вошёл — уводим на форму входа, а не показываем ошибку."""
+    user = await maybe_user(request)
+    if user is None:
+        raise NeedLogin
+    return user
+
+
+async def editor(request: Request) -> User:
+    """Право менять. Роль наблюдателя нужна тем, кто должен видеть работу, но не
+    вмешиваться в неё: стажёр, бухгалтер, гость."""
+    user = await current_user(request)
+    if not user.can_edit:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Только просмотр")
+    return user
+
+
+@app.exception_handler(NeedLogin)
+async def to_login(request: Request, _: NeedLogin):
+    return RedirectResponse(
+        f"/login?next={request.url.path}", status_code=status.HTTP_303_SEE_OTHER
+    )
+
+
+@app.get("/login")
+async def login_form(request: Request, next: str = "/", error: str | None = None):
+    if await maybe_user(request):
+        return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
+    return templates.TemplateResponse(
+        request, "login.html", {"next": next, "error": error, "hide_nav": True}
+    )
+
+
+@app.post("/login")
+async def login(
+    request: Request, login: str = Form(...), password: str = Form(...), next: str = Form("/")
+):
+    ip = _client_ip(request)
+    if _too_many_failures(ip):
+        raise HTTPException(
+            status.HTTP_429_TOO_MANY_REQUESTS, "Слишком много попыток. Подождите пару минут."
+        )
+
+    user = await db.get_user_by_login(login)
+    if user is None or not user.active or not auth.verify_password(password, user.password_hash):
+        _failures.setdefault(ip, []).append(time.time())
+        log.warning("login.failed", login=login[:40])
+        return RedirectResponse(
+            f"/login?error=1&next={next}", status_code=status.HTTP_303_SEE_OTHER
+        )
+
+    _failures.pop(ip, None)
+    response = RedirectResponse(next or "/", status_code=status.HTTP_303_SEE_OTHER)
+    response.set_cookie(
+        auth.SESSION_COOKIE,
+        auth.make_session(user.id),
+        max_age=auth.SESSION_DAYS * 86400,
+        httponly=True,  # javascript до сессии не дотянется даже при вставке чужого скрипта
+        samesite="lax",
+        secure=request.url.scheme == "https",
+    )
+    log.info("login.ok", user=user.login)
+    return response
+
+
+@app.post("/logout")
+async def logout():
+    response = RedirectResponse("/login", status_code=status.HTTP_303_SEE_OTHER)
+    response.delete_cookie(auth.SESSION_COOKIE)
+    return response
+
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
 
-# --- Админка -------------------------------------------------------------------
+# --- экраны --------------------------------------------------------------------
 
 
-def _screen(request: Request, leads, counts: dict[str, int], demo: bool):
-    return templates.TemplateResponse(
-        request,
-        "admin.html",
-        {
-            "leads": [card(lead) for lead in leads],
-            "counts": counts,
-            "total": sum(counts.values()),
-            "statuses": STATUSES,
-            "urgencies": URGENCIES,
-            "urgency_ru": URGENCY_RU,
-            "status_ru": STATUS_RU,
-            "demo": demo,
-            # Куда бить формам и запросам за историей. Демо и боевая админка — это
-            # разные маршруты с разной проверкой прав, а не один с флажком в форме:
-            # флажок приходит из браузера, а значит его можно подменить.
-            "base": "/demo" if demo else "",
-            "home": "/demo" if demo else "/",
-            "public_source": PUBLIC_SOURCE,
-        },
-    )
+def card(lead) -> dict:
+    """Одна форма заявки для вебсокета и для первой отрисовки страницы.
 
-
-async def _events_of(lead_id: int) -> dict:
-    lead = await get_lead(lead_id, with_events=True)
-    if lead is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Заявка не найдена")
+    Связанные объекты берём из уже загруженного, а не через обычное обращение к полю:
+    у заявки, только что вынутой из закрытой сессии, такое обращение полезло бы в базу
+    за ответственным и упало бы прямо посреди приёма заявки.
+    """
+    assignee = lead.__dict__.get("assignee")
     return {
-        "events": [{"kind": e.kind, "note": e.note, "time": e.created_local} for e in lead.events]
+        "id": lead.id,
+        "name": lead.client_name,
+        "contact": lead.client_contact,
+        "text": lead.text,
+        "topic": lead.topic,
+        "urgency": lead.urgency,
+        "draft": lead.draft_reply,
+        "stage": lead.stage,
+        "source": lead.source,
+        "time": lead.created_local,
+        "amount": float(lead.amount) if lead.amount is not None else None,
+        "assignee": assignee.name if assignee else None,
+        "overdue": lead.overdue,
     }
 
 
-async def _apply_status(lead_id: int, status_to: str, back: str) -> RedirectResponse:
-    if status_to not in STATUSES:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Неизвестный статус")
-    lead = await set_status(lead_id, status_to)
-    if lead is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Заявка не найдена")
-    await hub.send("lead.status", card(lead))
-    return RedirectResponse(back, status_code=status.HTTP_303_SEE_OTHER)
+def _shell(user: User, **extra) -> dict:
+    return {
+        "me": user,
+        "stages": STAGES,
+        "stage_ru": STAGE_RU,
+        "urgencies": URGENCIES,
+        "urgency_ru": URGENCY_RU,
+        "event_ru": EVENT_RU,
+        **extra,
+    }
 
 
 @app.get("/")
-async def admin(
-    request: Request,
-    status_filter: str | None = None,
-    urgency: str | None = None,
-    _: str = Depends(require_admin),
+async def board(
+    request: Request, assignee_id: int | None = None, user: User = Depends(current_user)
 ):
-    leads = await get_all_leads(status=status_filter, urgency=urgency)
-    return _screen(request, leads, await count_by_status(), demo=False)
+    columns = await db.board(assignee_id=assignee_id)
+    return templates.TemplateResponse(
+        request,
+        "board.html",
+        _shell(
+            user,
+            columns={stage: [card(lead) for lead in rows] for stage, rows in columns.items()},
+            counts=await db.count_by_stage(),
+            people=await db.all_users(),
+            assignee_id=assignee_id,
+        ),
+    )
 
 
-@app.get("/leads/{lead_id}/events")
-async def lead_events(lead_id: int, _: str = Depends(require_admin)):
-    """История одной заявки. Отдельным запросом по клику, а не вместе с лентой:
-    иначе на каждой отрисовке страницы база тянула бы события всех двухсот карточек."""
-    return await _events_of(lead_id)
+@app.get("/leads")
+async def leads(
+    request: Request,
+    stage: str | None = None,
+    urgency: str | None = None,
+    source: str | None = None,
+    assignee_id: int | None = None,
+    search: str | None = None,
+    overdue: bool = False,
+    user: User = Depends(current_user),
+):
+    rows = await db.get_all_leads(
+        stage=stage,
+        urgency=urgency,
+        source=source,
+        assignee_id=assignee_id,
+        search=search,
+        overdue=overdue,
+    )
+    return templates.TemplateResponse(
+        request,
+        "leads.html",
+        _shell(
+            user,
+            leads=rows,
+            counts=await db.count_by_stage(),
+            people=await db.all_users(),
+            filters={
+                "stage": stage,
+                "urgency": urgency,
+                "source": source,
+                "assignee_id": assignee_id,
+                "search": search or "",
+                "overdue": overdue,
+            },
+        ),
+    )
 
 
-@app.post("/leads/{lead_id}/status")
-async def change_status(lead_id: int, status_to: str = Form(...), _: str = Depends(require_admin)):
-    return await _apply_status(lead_id, status_to, "/")
+@app.get("/leads/{lead_id}")
+async def lead_card(request: Request, lead_id: int, user: User = Depends(current_user)):
+    lead = await db.get_lead(lead_id, full=True)
+    if lead is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Заявка не найдена")
+    return templates.TemplateResponse(
+        request, "lead.html", _shell(user, lead=lead, people=await db.all_users())
+    )
 
 
-# --- Приём заявок --------------------------------------------------------------
+def _back(request: Request, lead_id: int) -> RedirectResponse:
+    target = request.headers.get("referer") or f"/leads/{lead_id}"
+    return RedirectResponse(target, status_code=status.HTTP_303_SEE_OTHER)
+
+
+@app.post("/leads/{lead_id}/stage")
+async def change_stage(
+    request: Request,
+    lead_id: int,
+    stage: str = Form(...),
+    lost_reason: str = Form(""),
+    user: User = Depends(editor),
+):
+    if stage not in STAGES:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Неизвестная стадия")
+    lead = await db.set_stage(lead_id, stage, user.id, lost_reason.strip() or None)
+    if lead is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Заявка не найдена")
+    await hub.send("lead.stage", card(await db.get_lead(lead_id, full=True)))
+    if request.headers.get("accept", "").startswith("application/json"):
+        return {"ok": True, "stage": lead.stage}
+    return _back(request, lead_id)
+
+
+@app.post("/leads/{lead_id}/assignee")
+async def change_assignee(
+    request: Request, lead_id: int, assignee_id: str = Form(""), user: User = Depends(editor)
+):
+    target = int(assignee_id) if assignee_id.strip() else None
+    if await db.set_assignee(lead_id, target, user.id) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Заявка не найдена")
+    return _back(request, lead_id)
+
+
+@app.post("/leads/{lead_id}/amount")
+async def change_amount(
+    request: Request, lead_id: int, amount: str = Form(""), user: User = Depends(editor)
+):
+    raw = amount.replace(" ", "").replace(",", ".").strip()
+    try:
+        value = Decimal(raw) if raw else None
+    except InvalidOperation as e:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Сумма не число") from e
+    if value is not None and value < 0:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Сумма не бывает отрицательной")
+    if await db.set_amount(lead_id, value, user.id) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Заявка не найдена")
+    return _back(request, lead_id)
+
+
+@app.post("/leads/{lead_id}/due")
+async def change_due(
+    request: Request, lead_id: int, due_at: str = Form(""), user: User = Depends(editor)
+):
+    value = None
+    if due_at.strip():
+        try:
+            # Браузер отдаёт местное время без зоны; считаем его временем сервера.
+            value = datetime.fromisoformat(due_at).replace(tzinfo=UTC)
+        except ValueError as e:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Не разобрал дату") from e
+    if await db.set_due(lead_id, value, user.id) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Заявка не найдена")
+    return _back(request, lead_id)
+
+
+@app.post("/leads/{lead_id}/note")
+async def add_note(
+    request: Request, lead_id: int, text: str = Form(...), user: User = Depends(editor)
+):
+    if await db.get_lead(lead_id) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Заявка не найдена")
+    await db.add_note(lead_id, user.id, text)
+    return _back(request, lead_id)
+
+
+# --- клиенты -------------------------------------------------------------------
+
+
+@app.get("/contacts")
+async def contacts(request: Request, search: str | None = None, user: User = Depends(current_user)):
+    return templates.TemplateResponse(
+        request,
+        "contacts.html",
+        _shell(user, contacts=await db.all_contacts(search), search=search or ""),
+    )
+
+
+@app.get("/contacts/{contact_id}")
+async def contact_card(request: Request, contact_id: int, user: User = Depends(current_user)):
+    contact = await db.get_contact(contact_id)
+    if contact is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Клиент не найден")
+    return templates.TemplateResponse(request, "contact.html", _shell(user, contact=contact))
+
+
+@app.post("/contacts/{contact_id}/note")
+async def contact_note(
+    request: Request, contact_id: int, note: str = Form(""), user: User = Depends(editor)
+):
+    if await db.set_contact_note(contact_id, note) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Клиент не найден")
+    return RedirectResponse(f"/contacts/{contact_id}", status_code=status.HTTP_303_SEE_OTHER)
+
+
+# --- отчёт и команда -----------------------------------------------------------
+
+
+@app.get("/report")
+async def report(request: Request, days: int = 30, user: User = Depends(current_user)):
+    return templates.TemplateResponse(
+        request, "report.html", _shell(user, report=await db.report(days), days=days)
+    )
+
+
+@app.get("/team")
+async def team(request: Request, error: str | None = None, user: User = Depends(current_user)):
+    return templates.TemplateResponse(
+        request,
+        "team.html",
+        _shell(user, people=await db.all_users(active_only=False), error=error),
+    )
+
+
+@app.post("/team")
+async def add_person(
+    login: str = Form(...),
+    name: str = Form(...),
+    password: str = Form(...),
+    role: str = Form("manager"),
+    user: User = Depends(current_user),
+):
+    if user.role != "admin":
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Сотрудников заводит владелец")
+    if len(password) < 8:
+        return RedirectResponse("/team?error=short", status_code=status.HTTP_303_SEE_OTHER)
+    if await db.get_user_by_login(login):
+        return RedirectResponse("/team?error=taken", status_code=status.HTTP_303_SEE_OTHER)
+    await db.create_user(login, name, password, role)
+    return RedirectResponse("/team", status_code=status.HTTP_303_SEE_OTHER)
+
+
+# --- приём заявок --------------------------------------------------------------
 
 MAX_BODY = 20_000
 
 
+class LeadIn(BaseModel):
+    text: str = Field(min_length=1, max_length=5000)
+    name: str | None = Field(default=None, max_length=200)
+    contact: str | None = Field(default=None, max_length=200)
+    source: str | None = Field(default=None, max_length=60)
+
+
+class PublicLeadIn(LeadIn):
+    # Поле спрятано от человека стилями. Браузер его не покажет, а бот, заполняющий
+    # форму по названиям полей, впишет туда что-нибудь — и выдаст себя.
+    company: str = ""
+
+
 async def accept(data: LeadIn, source: str) -> tuple[dict, bool]:
     """Общий путь для всех входов: сохранить, показать, разметить фоном."""
-    lead, is_new = await add_lead(
+    lead, is_new = await db.add_lead(
         client_name=data.name,
         client_contact=data.contact,
         text=data.text,
@@ -274,13 +511,12 @@ async def incoming_lead(request: Request):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Подпись не сходится") from e
 
     try:
-        payload = json.loads(body)
-        data = LeadIn.model_validate(payload)
+        data = LeadIn.model_validate(json.loads(body))
     except (ValueError, ValidationError) as e:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Не разобрал заявку") from e
 
     shape, _ = await accept(data, data.source or "интеграция")
-    return {"id": shape["id"], "status": shape["status"]}
+    return {"id": shape["id"], "status": "ok"}
 
 
 # Публичная форма не может ничего подписать: любой ключ, положенный в статику, лежит в
@@ -301,19 +537,13 @@ def _allowed(ip: str) -> bool:
     return True
 
 
-class PublicLeadIn(LeadIn):
-    # Поле спрятано от человека стилями. Браузер его не покажет, а бот, заполняющий
-    # форму по названиям полей, впишет туда что-нибудь — и выдаст себя.
-    company: str = ""
-
-
 @app.post("/api/public/lead")
 async def public_lead(request: Request, data: PublicLeadIn):
     if data.company:
         log.info("lead.honeypot", ip=_client_ip(request))
         # Отвечаем как на успех: бот не должен понять, что его отсеяли, иначе автор
         # подправит скрипт. Заявка при этом никуда не сохраняется.
-        return {"id": 0, "status": "new"}
+        return {"id": 0, "status": "ok"}
 
     if not _allowed(_client_ip(request)):
         raise HTTPException(
@@ -322,17 +552,17 @@ async def public_lead(request: Request, data: PublicLeadIn):
         )
 
     shape, _ = await accept(data, PUBLIC_SOURCE)
-    return shape
+    return {"id": shape["id"], "status": "ok"}
 
 
 async def enrich(lead_id: int) -> None:
     """Разметка заявки моделью. Падение здесь не должно ронять приём: заявка уже в базе."""
     try:
-        lead = await get_lead(lead_id)
+        lead = await db.get_lead(lead_id)
         if lead is None:
             return
         markup = await asyncio.to_thread(analyze_lead, lead.text)
-        updated = await set_markup(lead_id, markup.topic, markup.urgency, markup.draft_reply)
+        updated = await db.set_markup(lead_id, markup.topic, markup.urgency, markup.draft_reply)
         log.info("lead.enriched", lead_id=lead_id, urgency=markup.urgency)
         if updated is not None:
             await hub.send("lead.marked", card(updated))
@@ -342,53 +572,15 @@ async def enrich(lead_id: int) -> None:
         await hub.send("lead.failed", {"id": lead_id})
 
 
-# --- Демо ----------------------------------------------------------------------
-
-# Витрина для портфолио: тот же экран админки, но открытый и видящий только заявки,
-# пришедшие с публичной формы. Боевые заявки в демо не попадают никогда — их отбирает
-# запрос к базе по источнику, а не фильтр на странице.
-DEMO_ENABLED = os.environ.get("DEMO_ENABLED", "1") == "1"
-
-
-async def _demo_lead_or_403(lead_id: int) -> None:
-    """Статусы в демо трогать можно, но только у демонстрационных заявок."""
-    lead = await get_lead(lead_id)
-    if lead is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Заявка не найдена")
-    if lead.source != PUBLIC_SOURCE:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Эта заявка не из демо")
-
-
-def _demo_on() -> None:
-    if not DEMO_ENABLED:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Демо выключено")
-
-
-@app.get("/demo")
-async def demo(request: Request, status_filter: str | None = None, urgency: str | None = None):
-    _demo_on()
-    leads = await get_all_leads(
-        limit=30, status=status_filter, urgency=urgency, source=PUBLIC_SOURCE
-    )
-    return _screen(request, leads, await count_by_status(source=PUBLIC_SOURCE), demo=True)
-
-
-@app.get("/demo/leads/{lead_id}/events")
-async def demo_events(lead_id: int):
-    _demo_on()
-    await _demo_lead_or_403(lead_id)
-    return await _events_of(lead_id)
-
-
-@app.post("/demo/leads/{lead_id}/status")
-async def demo_status(lead_id: int, status_to: str = Form(...)):
-    _demo_on()
-    await _demo_lead_or_403(lead_id)
-    return await _apply_status(lead_id, status_to, "/demo")
-
-
 @app.websocket("/ws/leads")
 async def leads_socket(socket: WebSocket):
+    # Через вебсокет уезжают тексты заявок с контактами: он закрыт той же сессией,
+    # что и страницы, иначе он был бы дырой в обход всего входа.
+    user_id = auth.read_session(socket.cookies.get(auth.SESSION_COOKIE))
+    if user_id is None or await db.get_user(user_id) is None:
+        await socket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+
     await hub.join(socket)
     try:
         await hub.keep(socket)
