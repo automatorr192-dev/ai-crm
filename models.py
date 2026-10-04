@@ -13,6 +13,7 @@ from decimal import Decimal
 from typing import Literal
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     CheckConstraint,
     DateTime,
@@ -21,6 +22,7 @@ from sqlalchemy import (
     Numeric,
     String,
     Text,
+    false,
     func,
     text,
 )
@@ -36,6 +38,8 @@ STAGES: tuple[str, ...] = ("new", "in_work", "waiting", "won", "lost")
 CLOSED_STAGES: tuple[str, ...] = ("won", "lost")
 
 URGENCIES: tuple[str, ...] = ("low", "medium", "high")
+# Кто пишет в переписке по заявке: клиент, ассистент-квалификатор или живой менеджер.
+SPEAKERS: tuple[str, ...] = ("client", "agent", "manager")
 ROLES: tuple[str, ...] = ("admin", "manager", "viewer")
 
 # Виды событий по заявке.
@@ -178,6 +182,15 @@ class Lead(Base):
     due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
     lost_reason: Mapped[str | None] = mapped_column(String(200))
 
+    # Ассистент довёл разговор до готовности: задача ясна, созвон назначен. Такой лид
+    # менеджер берёт первым, а ассистент в переписку больше не вмешивается.
+    hot: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    # Чат клиента в Telegram, куда уходят ответы ассистента и менеджера.
+    chat_id: Mapped[int | None] = mapped_column(BigInteger, index=True)
+    # Что ассистент выяснил: задача, ниша, срок, бюджет. JSON строкой, а не отдельными
+    # колонками: набор полей меняется вместе с промптом, и миграция на каждое — лишнее.
+    qualification: Mapped[str | None] = mapped_column(Text)
+
     contact: Mapped[Contact | None] = relationship(back_populates="leads")
     assignee: Mapped[User | None] = relationship()
     events: Mapped[list["LeadEvent"]] = relationship(
@@ -185,6 +198,9 @@ class Lead(Base):
     )
     notes: Mapped[list["Note"]] = relationship(
         back_populates="lead", cascade="all, delete-orphan", order_by="Note.created_at.desc()"
+    )
+    messages: Mapped[list["Message"]] = relationship(
+        back_populates="lead", cascade="all, delete-orphan", order_by="Message.id"
     )
 
     def __repr__(self) -> str:
@@ -260,3 +276,22 @@ class LeadEvent(Base):
     def created_local(self) -> str:
         moment = self.created_at or datetime.now(UTC)
         return moment.strftime("%d.%m %H:%M")
+
+
+class Message(Base):
+    """Реплика в переписке по заявке. Хранится всё: и клиент, и ассистент, и менеджер —
+    менеджер, взявший горячего лида, читает разговор целиком, а не пересказ."""
+
+    __tablename__ = "messages"
+    __table_args__ = (
+        CheckConstraint(_in("role", SPEAKERS), name="ck_messages_role"),
+        Index("ix_messages_lead_created", "lead_id", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    lead_id: Mapped[int] = mapped_column(ForeignKey("leads.id", ondelete="CASCADE"))
+    role: Mapped[str] = mapped_column(String(10))
+    text: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    lead: Mapped[Lead] = relationship(back_populates="messages")

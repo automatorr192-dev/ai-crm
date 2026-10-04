@@ -56,6 +56,19 @@
     .other:hover { color: var(--accent); }
     .other span { color: var(--ink-3); font-size: 12.5px; }
 
+    .hot { font-size: 12px; font-weight: 650; padding: 2px 9px; border-radius: var(--r-pill); background: var(--accent); color: #fff; }
+    .known { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: 13.5px; margin-bottom: 14px; }
+    .known dt { color: var(--ink-3); }
+    .talk { display: flex; flex-direction: column; gap: 8px; max-height: 420px; overflow-y: auto; padding: 2px; }
+    .bubble { max-width: 82%; padding: 8px 12px; border-radius: var(--r-block); font-size: 14px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .bubble small { display: block; font-size: 11.5px; color: var(--ink-3); margin-bottom: 2px; }
+    .bubble.client { align-self: flex-start; background: var(--surface-2, var(--line)); }
+    .bubble.agent { align-self: flex-end; background: var(--accent-soft); }
+    .bubble.manager { align-self: flex-end; background: var(--accent); color: #fff; }
+    .bubble.manager small { color: rgba(255,255,255,.75); }
+    .reply-form { margin-top: 12px; display: grid; gap: 8px; }
+    .tg-link { font-family: var(--mono); font-size: 12.5px; overflow-wrap: anywhere; color: var(--ink-2); }
+
     .lost-note { margin-top: 10px; font-size: 13.5px; color: var(--ink-2); background: var(--low-bg); padding: 9px 12px; border-radius: var(--r-block); }
 {% endblock %}
 
@@ -79,6 +92,7 @@
           <span class="tag">{{ lead.topic }}</span>
           <span class="urg u-{{ lead.urgency }}"><i aria-hidden="true"></i>{{ urgency_ru.get(lead.urgency, lead.urgency) }}</span>
           {% endif %}
+          {% if lead.hot %}<span class="hot">горячий</span>{% endif %}
           {% if lead.source %}<span class="muted">{{ lead.source }}</span>{% endif %}
         </div>
 
@@ -98,6 +112,41 @@
 
         {% if lead.lost_reason %}
         <p class="lost-note"><b>Причина отказа:</b> {{ lead.lost_reason }}</p>
+        {% endif %}
+      </section>
+
+      <section class="panel" id="talk">
+        <h2 style="margin-bottom:12px">Разговор с клиентом</h2>
+        {% set labels = {'task': 'Задача', 'business': 'Бизнес', 'deadline': 'Срок', 'budget': 'Бюджет', 'call': 'Созвон'} %}
+        {% if known %}
+        <dl class="known">
+          {% for key, label in labels.items() if known.get(key) %}
+          <dt>{{ label }}</dt><dd>{{ known[key] }}</dd>
+          {% endfor %}
+        </dl>
+        {% endif %}
+
+        {% if talk %}
+        <div class="talk">
+          {% for m in talk %}
+          <p class="bubble {{ m.role }}"><small>{{ {'client': lead.title, 'agent': 'Ассистент', 'manager': 'Менеджер'}[m.role] }}</small>{{ m.text }}</p>
+          {% endfor %}
+        </div>
+        {% elif tg_link %}
+        <p class="muted">Клиент ещё не перешёл в Telegram. Ссылка, по которой ассистент продолжит разговор:</p>
+        <p class="tg-link">{{ tg_link }}</p>
+        {% else %}
+        <p class="muted">Ассистент выключен: для него нужны TG_BOT_TOKEN и TG_BOT_USERNAME.</p>
+        {% endif %}
+
+        {% if sent == '0' %}<p class="overdue" style="font-size:13.5px;margin-top:10px">Сообщение сохранено, но в Telegram не ушло: клиент ещё не открыл чат с ботом.</p>{% endif %}
+
+        {% if me.can_edit and lead.chat_id %}
+        <form class="reply-form" method="post" action="/leads/{{ lead.id }}/message">
+          <label for="reply" class="muted">Ответить клиенту в Telegram. После этого ассистент замолкает.</label>
+          <textarea id="reply" name="text" required maxlength="4000">{{ lead.draft_reply or '' }}</textarea>
+          <button class="btn primary" style="justify-self:start">Отправить</button>
+        </form>
         {% endif %}
       </section>
 

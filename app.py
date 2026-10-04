@@ -25,6 +25,7 @@ from pydantic import BaseModel, Field, ValidationError
 
 import auth
 import db
+import tgbot
 import webhook
 from ai import analyze_lead
 from hub import hub
@@ -71,7 +72,12 @@ async def lifespan(app: FastAPI):
     # Свежая система пуста, а завести сотрудника можно только войдя. Первый вход
     # берётся из окружения и в базу попадает уже хешем.
     await db.ensure_admin(os.environ.get("ADMIN_USER", ""), os.environ.get("ADMIN_PASSWORD", ""))
+    # Бот ассистента живёт в том же процессе, что и CRM: отдельное приложение под него
+    # на Amvera тарифицировалось бы отдельно. Без токена он просто не стартует.
+    bot = asyncio.create_task(tgbot.run()) if tgbot.enabled() else None
     yield
+    if bot:
+        bot.cancel()
 
 
 app = FastAPI(title="AI-CRM", lifespan=lifespan)
@@ -227,6 +233,7 @@ def card(lead) -> dict:
         "amount": float(lead.amount) if lead.amount is not None else None,
         "assignee": assignee.name if assignee else None,
         "overdue": lead.overdue,
+        "hot": lead.hot,
     }
 
 
@@ -305,7 +312,17 @@ async def lead_card(request: Request, lead_id: int, user: User = Depends(current
     if lead is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Заявка не найдена")
     return templates.TemplateResponse(
-        request, "lead.html", _shell(user, lead=lead, people=await db.all_users())
+        request,
+        "lead.html",
+        _shell(
+            user,
+            lead=lead,
+            people=await db.all_users(),
+            talk=await db.messages(lead_id, limit=200),
+            known=db.qualification(lead),
+            tg_link=tgbot.start_link(lead_id),
+            sent=request.query_params.get("sent"),
+        ),
     )
 
 
@@ -386,6 +403,27 @@ async def add_note(
 
 
 # --- клиенты -------------------------------------------------------------------
+
+
+@app.post("/leads/{lead_id}/message")
+async def message_client(
+    request: Request, lead_id: int, text: str = Form(...), user: User = Depends(editor)
+):
+    """Ответ менеджера клиенту в Telegram. Ассистент в разговор больше не вмешивается:
+    раз человек написал сам, лид у него."""
+    lead = await db.get_lead(lead_id)
+    if lead is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Заявка не найдена")
+    text = text.strip()
+    if not text:
+        return _back(request, lead_id)
+    await db.add_message(lead_id, "manager", text)
+    await db.save_qualification(lead_id, {"handoff": "manager"})
+    delivered = bool(lead.chat_id) and await tgbot.send(lead.chat_id, text)
+    log.info("lead.manager_message", lead_id=lead_id, delivered=delivered)
+    return RedirectResponse(
+        f"/leads/{lead_id}?sent={'1' if delivered else '0'}", status.HTTP_303_SEE_OTHER
+    )
 
 
 @app.get("/contacts")
@@ -552,7 +590,8 @@ async def public_lead(request: Request, data: PublicLeadIn):
         )
 
     shape, _ = await accept(data, PUBLIC_SOURCE)
-    return {"id": shape["id"], "status": "ok"}
+    # Ссылка продолжить разговор с ассистентом. Подписана: id заявки в ней не подделать.
+    return {"id": shape["id"], "status": "ok", "telegram": tgbot.start_link(shape["id"])}
 
 
 async def enrich(lead_id: int) -> None:

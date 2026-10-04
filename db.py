@@ -8,6 +8,7 @@ SQLAlchemy, поэтому в коде выше про это знать не н
 """
 
 import hashlib
+import json
 import os
 import re
 from datetime import UTC, datetime, timedelta
@@ -18,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.orm import selectinload
 
 from auth import hash_password
-from models import CLOSED_STAGES, Contact, Lead, LeadEvent, Note, User
+from models import CLOSED_STAGES, Contact, Lead, LeadEvent, Message, Note, User
 
 DATA_DIR = os.environ.get("DATA_DIR") or ("/data" if os.path.isdir("/data") else "data")
 
@@ -441,6 +442,101 @@ async def mark_failed(lead_id: int, reason: str) -> None:
     """Модель не ответила. Заявка на месте, но в истории это должно остаться:
     иначе непонятно, почему карточка без темы."""
     await _touch(lead_id, "mark_failed", reason[:200], None)
+
+
+# --- переписка с клиентом -------------------------------------------------------
+
+
+async def add_message(lead_id: int, role: str, text: str) -> Message:
+    message = Message(lead_id=lead_id, role=role, text=text.strip()[:4000])
+    async with Session() as session:
+        session.add(message)
+        await session.commit()
+        await session.refresh(message)
+    return message
+
+
+async def messages(lead_id: int, limit: int = 40) -> list[Message]:
+    """Последние реплики по порядку. Хвост, а не начало: в длинном разговоре модели нужны
+    свежие сообщения, а то, что клиент сказал в самом начале, уже лежит в квалификации."""
+    async with Session() as session:
+        rows = await session.execute(
+            select(Message)
+            .where(Message.lead_id == lead_id)
+            .order_by(Message.id.desc())
+            .limit(limit)
+        )
+        return list(reversed(rows.scalars().all()))
+
+
+async def link_chat(lead_id: int, chat_id: int) -> Lead | None:
+    async with Session() as session:
+        lead = await session.get(Lead, lead_id)
+        if lead is None:
+            return None
+        lead.chat_id = chat_id
+        await session.commit()
+        await session.refresh(lead)
+    return lead
+
+
+async def lead_by_chat(chat_id: int) -> Lead | None:
+    """Самая свежая заявка этого чата: человек мог оставить вторую, и отвечать надо по ней."""
+    async with Session() as session:
+        rows = await session.execute(
+            select(Lead).where(Lead.chat_id == chat_id).order_by(Lead.id.desc()).limit(1)
+        )
+        return rows.scalar_one_or_none()
+
+
+def qualification(lead: Lead) -> dict:
+    try:
+        return json.loads(lead.qualification) if lead.qualification else {}
+    except ValueError:
+        return {}
+
+
+async def save_qualification(lead_id: int, fields: dict) -> dict:
+    """Дописать выясненное. Пустые значения не затирают уже известное: модель, не
+    услышав про бюджет в этой реплике, не должна стирать бюджет из прошлой."""
+    async with Session() as session:
+        lead = await session.get(Lead, lead_id)
+        if lead is None:
+            return {}
+        merged = qualification(lead) | {k: v for k, v in fields.items() if v}
+        lead.qualification = json.dumps(merged, ensure_ascii=False)
+        await session.commit()
+    return merged
+
+
+async def booked_calls(start: datetime, end: datetime) -> list[datetime]:
+    """Занятые слоты созвонов: сроки открытых сделок внутри окна."""
+    async with Session() as session:
+        rows = await session.execute(
+            select(Lead.due_at).where(
+                Lead.due_at >= start, Lead.due_at < end, Lead.stage.not_in(CLOSED_STAGES)
+            )
+        )
+        return [d if d.tzinfo else d.replace(tzinfo=UTC) for d in rows.scalars().all()]
+
+
+async def mark_hot(lead_id: int, summary: str) -> Lead | None:
+    """Ассистент передаёт лида человеку: флаг, стадия «в работе» и выжимка разговора
+    комментарием, чтобы менеджер начал с неё, а не с чтения всей переписки."""
+    async with Session() as session:
+        lead = await session.get(Lead, lead_id)
+        if lead is None:
+            return None
+        lead.hot = True
+        if lead.stage == "new":
+            lead.stage = "in_work"
+            session.add(LeadEvent(lead_id=lead_id, kind="stage", note="in_work"))
+        text = f"Ассистент: {summary.strip()}"[:2000]
+        session.add(Note(lead_id=lead_id, user_id=None, text=text))
+        session.add(LeadEvent(lead_id=lead_id, kind="note", note=text[:60]))
+        await session.commit()
+        await session.refresh(lead)
+    return lead
 
 
 # --- отчёт ---------------------------------------------------------------------

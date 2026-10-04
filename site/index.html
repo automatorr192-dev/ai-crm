@@ -429,12 +429,22 @@
           return;
         }
         if (!response.ok) throw new Error(response.status);
+        const saved = await response.json();
 
         show(
           '<div class="done"><h3>Заявка принята</h3>' +
-          '<p>Отвечу в течение дня — на тот контакт, который вы оставили. ' +
-          'Если нужно быстрее, напишите в телеграм внизу страницы.</p></div>'
+          '<p>Отвечу в течение дня — на тот контакт, который вы оставили.</p></div>'
         );
+        // Ассистент уточнит детали и назначит созвон прямо в Telegram, не дожидаясь менеджера.
+        if (saved.telegram) {
+          const go = document.createElement('a');
+          go.className = 'btn send';
+          go.href = saved.telegram;
+          go.target = '_blank';
+          go.rel = 'noopener';
+          go.textContent = 'Продолжить в Telegram';
+          result.querySelector('.done').append(go);
+        }
         form.reset();
       } catch {
         show('<p class="error">Не получилось отправить. Попробуйте ещё раз ' +

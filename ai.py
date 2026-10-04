@@ -69,7 +69,12 @@ def _parse(content: str) -> Markup:
     return Markup.model_validate(json.loads(content))
 
 
-def analyze_lead(text: str) -> Markup:
+def analyze_lead_usage(text: str) -> tuple[Markup, dict]:
+    """Разметка плюс фактический расход: токены и стоимость в долларах из ответа OpenRouter.
+
+    Эвалам нужна цена прогона, продукту — только разметка, поэтому обычный путь идёт
+    через analyze_lead, а эта функция отдаёт всё целиком.
+    """
     last_error = "нет ответа"
     for model in MODELS:
         try:
@@ -80,6 +85,7 @@ def analyze_lead(text: str) -> Markup:
                     {"role": "user", "content": fenced(text)},
                 ],
                 response_format={"type": "json_object"},
+                extra_body={"usage": {"include": True}},
             )
             usage = response.usage
             logging.info(
@@ -88,7 +94,13 @@ def analyze_lead(text: str) -> Markup:
                 usage.prompt_tokens if usage else "?",
                 usage.completion_tokens if usage else "?",
             )
-            return _parse(response.choices[0].message.content)
+            markup = _parse(response.choices[0].message.content)
+            return markup, {
+                "model": model,
+                "input_tokens": usage.prompt_tokens if usage else 0,
+                "output_tokens": usage.completion_tokens if usage else 0,
+                "usd": getattr(usage, "cost", None) if usage else None,
+            }
         except (ValueError, ValidationError, json.JSONDecodeError) as e:
             last_error = f"{model} вернул не тот JSON: {e}"
             logging.warning(last_error)
@@ -96,6 +108,10 @@ def analyze_lead(text: str) -> Markup:
             last_error = f"{model}: {e}"
             logging.warning(last_error)
     raise RuntimeError(last_error)
+
+
+def analyze_lead(text: str) -> Markup:
+    return analyze_lead_usage(text)[0]
 
 
 if __name__ == "__main__":
