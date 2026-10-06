@@ -53,11 +53,26 @@ def start_link(lead_id: int) -> str | None:
     return f"https://t.me/{USERNAME}?start={start_payload(lead_id)}"
 
 
-async def send(chat_id: int, text: str) -> bool:
+async def send(
+    chat_id: int, text: str, html: bool = False, button: tuple[str, str] | None = None
+) -> bool:
     if _bot is None:
         return False
+    from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, LinkPreviewOptions
+
+    markup = None
+    if button:
+        markup = InlineKeyboardMarkup(
+            inline_keyboard=[[InlineKeyboardButton(text=button[0], url=button[1])]]
+        )
     try:
-        await _bot.send_message(chat_id, text)
+        await _bot.send_message(
+            chat_id,
+            text,
+            parse_mode="HTML" if html else None,
+            reply_markup=markup,
+            link_preview_options=LinkPreviewOptions(is_disabled=True),
+        )
         return True
     except Exception:
         log.exception("tg.send_failed", chat_id=chat_id)
@@ -80,10 +95,16 @@ async def _answer(lead_id: int, chat_id: int, text: str | None) -> None:
 
 def _router():
     from aiogram import F, Router
-    from aiogram.filters import CommandObject, CommandStart
+    from aiogram.filters import Command, CommandObject, CommandStart
     from aiogram.types import Message
 
+    team = Router()
     router = Router()
+    router.message.filter(F.chat.type == "private")
+
+    @team.message(Command("id"))
+    async def chat_id(message: Message):
+        await message.answer(f"ID этого чата: {message.chat.id}. Впишите его в NOTIFY_CHAT_IDS.")
 
     @router.message(CommandStart(deep_link=True))
     async def start_with_lead(message: Message, command: CommandObject):
@@ -108,7 +129,8 @@ def _router():
             return
         await _answer(lead.id, message.chat.id, message.text)
 
-    return router
+    team.include_router(router)
+    return team
 
 
 async def run() -> None:

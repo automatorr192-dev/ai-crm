@@ -12,6 +12,10 @@
     .form-grid { display: grid; gap: 12px; }
     @media (min-width: 700px) { .form-grid { grid-template-columns: repeat(4, 1fr); align-items: end; } }
     .form-grid input, .form-grid select { width: 100%; }
+    .access { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--ink-2); }
+    .access label { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-weight: 450; font-size: 13px; cursor: pointer; }
+    .access input { accent-color: var(--accent); width: 16px; height: 16px; }
+    .legend { font-size: 13px; color: var(--ink-3); margin-top: 12px; max-width: 62ch; }
     .bad { background: var(--high-bg); color: var(--high); font-size: 13.5px; padding: 9px 12px; border-radius: var(--r-block); margin-bottom: 14px; }
 {% endblock %}
 
@@ -27,13 +31,25 @@
     <div class="person-row {% if not person.active %}off{% endif %}">
       <div>
         <b>{{ person.name }}</b>
-        <div class="login">{{ person.login }}</div>
+        <div class="login">{{ person.login }}{% if not person.active %} · доступ закрыт{% endif %}{% if person.own_only and person.role == 'manager' %} · только свои сделки{% endif %}</div>
       </div>
-      <span class="role {% if person.role == 'admin' %}admin{% endif %}">
+      {% if me.role == 'admin' and person.id != me.id %}
+      <form class="access" method="post" action="/team/{{ person.id }}/access" style="margin-left:auto">
+        {% if person.role == 'manager' %}
+        <label><input type="checkbox" name="own_only" value="1" {% if person.own_only %}checked{% endif %} onchange="this.form.submit()">только свои</label>
+        {% endif %}
+        <label><input type="checkbox" name="active" value="1" {% if person.active %}checked{% endif %} onchange="this.form.submit()">доступ</label>
+      </form>
+      {% endif %}
+      <span class="role {% if person.role == 'admin' %}admin{% endif %}" {% if me.role == 'admin' and person.id != me.id %}style="margin-left:0"{% endif %}>
         {{ {'admin': 'владелец', 'manager': 'менеджер', 'viewer': 'только смотрит'}[person.role] }}
       </span>
     </div>
     {% endfor %}
+    {% if me.role == 'admin' %}
+    <p class="legend">«Только свои»: менеджер видит свои сделки и новые, ещё не распределённые, а чужих клиентов не видит ни в списке, ни в выгрузке, ни в живой ленте. Снятый «доступ» закрывает вход сразу, история работы остаётся.</p>
+    {% endif %}
+    {% if error == 'self' %}<p class="bad" style="margin-top:12px">Закрыть доступ самому себе нельзя: система останется без владельца</p>{% endif %}
   </section>
 
   {% if me.role == 'admin' %}
@@ -69,6 +85,11 @@
       </div>
       <button class="btn primary">Добавить</button>
     </form>
+  </section>
+  <section class="panel">
+    <h2 style="margin-bottom:6px">Резервные копии</h2>
+    <p class="muted" style="margin-bottom:12px">Каждую ночь система сама сохраняет копию базы и хранит последние две недели. Свежую копию можно скачать сейчас.</p>
+    <a class="btn" href="/backup" download>Скачать копию базы</a>
   </section>
   {% else %}
   <p class="muted">Сотрудников заводит владелец.</p>

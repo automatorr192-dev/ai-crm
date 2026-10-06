@@ -20,7 +20,7 @@
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
     th { text-align: left; font-size: 12.5px; font-weight: 600; color: var(--ink-3); padding: 6px 8px; border-bottom: 1px solid var(--line); }
     td { padding: 9px 8px; border-bottom: 1px solid var(--line); }
-    td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
     tr:last-child td { border-bottom: 0; }
 {% endblock %}
 
@@ -28,6 +28,7 @@
 <main class="wrap">
   <div class="head-row">
     <h1>Отчёт</h1>
+    {% if not me.sees_all %}<span class="muted">по вашим сделкам</span>{% endif %}
     <div class="filters" style="margin:0">
       {% for period in [7, 30, 90] %}
       <a class="chip-link" href="/report?days={{ period }}" aria-current="{{ 'true' if days == period else 'false' }}">
@@ -100,6 +101,28 @@
     {% else %}
     <p class="muted">За период заявок не было.</p>
     {% endif %}
+  </section>
+
+  <section class="panel">
+    <h2 style="margin-bottom:10px">Рекламные кампании</h2>
+    <table>
+      <thead>
+        <tr><th>Источник</th><th>Кампания</th><th class="num">Заявок</th><th class="num">Сделок</th><th class="num">Выручка</th></tr>
+      </thead>
+      <tbody>
+        {% for source, campaign, count, deals, money in report.by_campaign %}
+        <tr>
+          <td>{{ source }}</td>
+          <td>{{ campaign }}</td>
+          <td class="num">{{ count }}</td>
+          <td class="num">{{ deals }}</td>
+          <td class="num">{{ '{:,.0f}'.format(money).replace(',', ' ') ~ ' ₽' if money else '—' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="muted">Заявок с UTM-метками за период не было. Метки приходят из ссылок рекламы: ?utm_source=yandex&amp;utm_campaign=…</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </section>
 
   <section class="panel">

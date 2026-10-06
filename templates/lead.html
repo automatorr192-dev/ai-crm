@@ -69,6 +69,14 @@
     .reply-form { margin-top: 12px; display: grid; gap: 8px; }
     .tg-link { font-family: var(--mono); font-size: 12.5px; overflow-wrap: anywhere; color: var(--ink-2); }
 
+    .file { display: flex; flex-direction: column; text-decoration: none; padding: 9px 0; border-top: 1px solid var(--line); }
+    .file:first-of-type { border-top: 0; padding-top: 0; }
+    .file span { font-size: 14px; font-weight: 550; overflow-wrap: anywhere; }
+    .file:hover span { color: var(--accent); }
+    .file small { font-size: 12px; color: var(--ink-3); }
+    .upload { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+    .upload input[type=file] { flex: 1 1 220px; font-size: 13px; padding: 6px; }
+    .facts { margin-top: 14px; font-size: 12.5px; color: var(--ink-3); }
     .lost-note { margin-top: 10px; font-size: 13.5px; color: var(--ink-2); background: var(--low-bg); padding: 9px 12px; border-radius: var(--r-block); }
 {% endblock %}
 
@@ -94,6 +102,7 @@
           {% endif %}
           {% if lead.hot %}<span class="hot">горячий</span>{% endif %}
           {% if lead.source %}<span class="muted">{{ lead.source }}</span>{% endif %}
+          {% if lead.utm_source %}<span class="tag" title="рекламная метка">{{ lead.utm_source }}{% if lead.utm_medium %} / {{ lead.utm_medium }}{% endif %}{% if lead.utm_campaign %} / {{ lead.utm_campaign }}{% endif %}</span>{% endif %}
         </div>
 
         <p class="said">{{ lead.text }}</p>
@@ -112,6 +121,14 @@
 
         {% if lead.lost_reason %}
         <p class="lost-note"><b>Причина отказа:</b> {{ lead.lost_reason }}</p>
+        {% endif %}
+
+        {% if lead.consent_at or lead.external_id %}
+        <p class="facts">
+          {% if lead.consent_at %}Согласие на обработку данных: {{ lead.consent_at | msk }}{% endif %}
+          {% if lead.consent_at and lead.external_id %} · {% endif %}
+          {% if lead.external_id %}Во внешней CRM: #{{ lead.external_id }}{% endif %}
+        </p>
         {% endif %}
       </section>
 
@@ -146,6 +163,24 @@
           <label for="reply" class="muted">Ответить клиенту в Telegram. После этого ассистент замолкает.</label>
           <textarea id="reply" name="text" required maxlength="4000">{{ lead.draft_reply or '' }}</textarea>
           <button class="btn primary" style="justify-self:start">Отправить</button>
+        </form>
+        {% endif %}
+      </section>
+
+      <section class="panel">
+        <h2 style="margin-bottom:12px">Файлы</h2>
+        {% for item in lead.attachments %}
+        <a class="file" href="/files/{{ item.id }}">
+          <span>{{ item.name }}</span>
+          <small>{{ item.size_text }} · {{ item.author.name if item.author else 'кто-то' }} · {{ item.created_at | msk }}</small>
+        </a>
+        {% else %}
+        <p class="muted" style="margin-bottom:10px">Смета, договор, фото объекта — всё, что относится к сделке.</p>
+        {% endfor %}
+        {% if me.can_edit %}
+        <form class="upload" method="post" action="/leads/{{ lead.id }}/files" enctype="multipart/form-data">
+          <input type="file" name="file" required>
+          <button class="btn">Прикрепить</button>
         </form>
         {% endif %}
       </section>
@@ -227,7 +262,7 @@
             <span class="field-label">Напомнить</span>
             <form method="post" action="/leads/{{ lead.id }}/due">
               <input type="datetime-local" name="due_at"
-                     value="{{ lead.due_at.strftime('%Y-%m-%dT%H:%M') if lead.due_at else '' }}">
+                     value="{{ lead.due_input }}">
               <button class="btn">Сохранить</button>
             </form>
           </div>
@@ -266,7 +301,7 @@
         <div class="event">
           <time>{{ event.created_local }}</time>
           <span>
-            {{ event_ru.get(event.kind, event.kind) }}{% if event.note %} · {{ event.note }}{% endif %}
+            {{ event_ru.get(event.kind, event.kind) }}{% if event.note %} · {{ stage_ru.get(event.note) if event.kind == 'stage' and event.note in stage_ru else urgency_ru.get(event.note, event.note) if event.kind == 'marked' else event.note }}{% endif %}
             {% if event.author %} ({{ event.author.name }}){% endif %}
           </span>
         </div>

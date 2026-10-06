@@ -71,7 +71,9 @@ async def test_oversized_body_is_refused(database, client):
 
 
 async def test_form_lead_is_accepted_without_signature(database, client):
-    response = client.post("/api/public/lead", json={"text": "Заявки теряются в директе"})
+    response = client.post(
+        "/api/public/lead", json={"consent": True, "text": "Заявки теряются в директе"}
+    )
 
     assert response.status_code == 200
     saved = await db.get_all_leads()
@@ -79,12 +81,14 @@ async def test_form_lead_is_accepted_without_signature(database, client):
 
 
 async def test_empty_text_is_rejected(database, client):
-    assert client.post("/api/public/lead", json={"text": ""}).status_code == 422
+    assert client.post("/api/public/lead", json={"consent": True, "text": ""}).status_code == 422
 
 
 async def test_honeypot_looks_like_success_but_saves_nothing(database, client):
     """Бот не должен понять, что его отсеяли: иначе автор поправит скрипт."""
-    response = client.post("/api/public/lead", json={"text": "куплю ссылки", "company": "ООО Рога"})
+    response = client.post(
+        "/api/public/lead", json={"consent": True, "text": "куплю ссылки", "company": "ООО Рога"}
+    )
 
     assert response.status_code == 200
     assert await db.get_all_leads() == []
@@ -95,13 +99,21 @@ async def test_public_form_has_an_hourly_ceiling(database, client, monkeypatch):
     monkeypatch.setattr(app_module, "PUBLIC_PER_HOUR", 2)
 
     for i in range(2):
-        assert client.post("/api/public/lead", json={"text": f"заявка {i}"}).status_code == 200
-    assert client.post("/api/public/lead", json={"text": "третья"}).status_code == 429
+        assert (
+            client.post(
+                "/api/public/lead", json={"consent": True, "text": f"заявка {i}"}
+            ).status_code
+            == 200
+        )
+    assert (
+        client.post("/api/public/lead", json={"consent": True, "text": "третья"}).status_code == 429
+    )
 
 
 async def test_form_lead_creates_a_client_card(database, client):
     client.post(
-        "/api/public/lead", json={"text": "нужен бот", "contact": "@polina", "name": "Полина"}
+        "/api/public/lead",
+        json={"consent": True, "text": "нужен бот", "contact": "@polina", "name": "Полина"},
     )
 
     people = await db.all_contacts()

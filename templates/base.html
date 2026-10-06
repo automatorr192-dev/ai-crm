@@ -133,6 +133,7 @@
     h1 { font-size: 21px; font-weight: 640; letter-spacing: -.015em; }
     h2 { font-size: 16px; font-weight: 620; letter-spacing: -.01em; }
     .head-row { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+    .head-row .actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; align-self: center; }
     .muted { color: var(--ink-3); font-size: 13.5px; }
 
     /* --- элементы управления --- */
@@ -264,6 +265,7 @@
       <a class="tab" href="/contacts" {% if request.url.path.startswith('/contacts') %}aria-current="page"{% endif %}>Клиенты</a>
       <a class="tab" href="/report" {% if request.url.path == '/report' %}aria-current="page"{% endif %}>Отчёт</a>
       <a class="tab" href="/team" {% if request.url.path == '/team' %}aria-current="page"{% endif %}>Команда</a>
+      {% if me.role == 'admin' %}<a class="tab" href="/log" {% if request.url.path == '/log' %}aria-current="page"{% endif %}>Журнал</a>{% endif %}
 
       <div class="who-am-i">
         <span class="conn" id="conn" title="живое обновление"><i aria-hidden="true"></i></span>

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Журнал{% endblock %}
+
+{% block styles %}
+    .line { display: grid; grid-template-columns: 96px 150px 1fr; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); font-size: 13.5px; align-items: baseline; }
+    .line:first-of-type { border-top: 0; }
+    .line time { font-family: var(--mono); font-size: 12px; color: var(--ink-3); }
+    .line .who { color: var(--ink-2); }
+    .line .who.robot { color: var(--ink-3); }
+    .line a { text-decoration: none; color: var(--ink); font-weight: 550; }
+    .line a:hover { color: var(--accent); }
+    .line .what { color: var(--ink-2); }
+    .pick { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    @media (max-width: 640px) {
+      .line { grid-template-columns: 1fr; gap: 2px; }
+    }
+{% endblock %}
+
+{% block body %}
+<main class="wrap">
+  <div class="head-row">
+    <h1>Журнал</h1>
+    <span class="muted">кто, что и когда менял в сделках · последние {{ events | length }}</span>
+  </div>
+
+  <form class="pick" method="get" action="/log">
+    <select name="user_id" onchange="this.form.submit()">
+      <option value="">все сотрудники</option>
+      {% for person in people %}
+      <option value="{{ person.id }}" {% if filters.user_id == person.id %}selected{% endif %}>{{ person.name }}</option>
+      {% endfor %}
+    </select>
+    <select name="kind" onchange="this.form.submit()">
+      <option value="">все действия</option>
+      {% for kind, title in event_ru.items() %}
+      <option value="{{ kind }}" {% if filters.kind == kind %}selected{% endif %}>{{ title }}</option>
+      {% endfor %}
+    </select>
+    <noscript><button class="btn">Показать</button></noscript>
+  </form>
+
+  <section class="panel">
+    {% for event in events %}
+    <div class="line">
+      <time>{{ event.created_local }}</time>
+      <span class="who {% if not event.author %}robot{% endif %}">{{ event.author.name if event.author else 'система' }}</span>
+      <span>
+        <a href="/leads/{{ event.lead_id }}">#{{ event.lead_id }} {{ event.lead.title if event.lead else '' }}</a>
+        <span class="what"> · {{ event_ru.get(event.kind, event.kind) }}{% if event.note %}: {{ stage_ru.get(event.note) if event.kind == 'stage' and event.note in stage_ru else urgency_ru.get(event.note, event.note) if event.kind == 'marked' else event.note }}{% endif %}</span>
+      </span>
+    </div>
+    {% else %}
+    <p class="muted">Записей нет.</p>
+    {% endfor %}
+  </section>
+</main>
+{% endblock %}

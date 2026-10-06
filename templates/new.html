@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Новая заявка{% endblock %}
+
+{% block styles %}
+    .back { font-size: 13.5px; color: var(--ink-3); text-decoration: none; }
+    .back:hover { color: var(--ink); }
+    .grid { display: grid; gap: 14px; }
+    @media (min-width: 700px) { .grid.two { grid-template-columns: 1fr 1fr; } }
+    .grid input, .grid select { width: 100%; }
+    textarea { min-height: 120px; }
+    .row-end { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+{% endblock %}
+
+{% block body %}
+<main class="wrap narrow">
+  <p style="margin-bottom:12px"><a class="back" href="/">← к воронке</a></p>
+  <div class="head-row">
+    <h1>Новая заявка</h1>
+    <span class="muted">звонок, письмо, встреча — всё, что пришло не через форму</span>
+  </div>
+
+  <form class="panel grid" method="post" action="/leads">
+    <div class="grid two">
+      <div>
+        <label for="name">Клиент</label>
+        <input id="name" name="name" maxlength="200" placeholder="Полина" autocomplete="off">
+      </div>
+      <div>
+        <label for="contact">Телефон, почта или телеграм</label>
+        <input id="contact" name="contact" maxlength="200" placeholder="+7 999 120-45-67" autocomplete="off">
+      </div>
+    </div>
+
+    <div>
+      <label for="text">Что нужно клиенту</label>
+      <textarea id="text" name="text" required maxlength="5000"
+                placeholder="Позвонила, нужна запись клиентов через бота, салон на 4 мастера, хотят до конца месяца"></textarea>
+    </div>
+
+    <div class="grid two">
+      <div>
+        <label for="source">Откуда</label>
+        <select id="source" name="source">
+          {% for item in sources %}<option>{{ item }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="amount">Сумма, ₽ <span class="muted">— если уже понятна</span></label>
+        <input id="amount" name="amount" inputmode="decimal" placeholder="45000">
+      </div>
+    </div>
+
+    {% if me.sees_all %}
+    <div>
+      <label for="assignee_id">Ответственный</label>
+      <select id="assignee_id" name="assignee_id">
+        <option value="">не назначен</option>
+        {% for person in people if person.can_edit %}
+        <option value="{{ person.id }}" {% if person.id == me.id %}selected{% endif %}>{{ person.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+
+    <div class="row-end">
+      <button class="btn primary">Создать</button>
+      <span class="muted">Модель разметит тему и срочность так же, как у заявок с сайта</span>
+    </div>
+  </form>
+</main>
+{% endblock %}

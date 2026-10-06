@@ -30,10 +30,10 @@
     <h1>{{ contact.title }}</h1>
     {% if contact.contact %}<p class="muted" style="margin-top:4px">{{ contact.contact }}</p>{% endif %}
 
-    {% set won = contact.leads | selectattr('stage', 'equalto', 'won') | list %}
+    {% set won = leads | selectattr('stage', 'equalto', 'won') | list %}
     {% set earned = won | map(attribute='amount') | select | sum %}
     <div class="stats">
-      <div class="stat"><b>{{ contact.leads | length }}</b><span>обращений</span></div>
+      <div class="stat"><b>{{ leads | length }}</b><span>обращений</span></div>
       <div class="stat"><b>{{ won | length }}</b><span>сделок</span></div>
       {% if earned %}
       <div class="stat"><b>{{ '{:,.0f}'.format(earned).replace(',', ' ') }} ₽</b><span>принёс</span></div>
@@ -55,7 +55,7 @@
 
   <section class="panel">
     <h2 style="margin-bottom:6px">Все обращения</h2>
-    {% for lead in contact.leads | sort(attribute='created_at', reverse=true) %}
+    {% for lead in leads | sort(attribute='created_at', reverse=true) %}
     <a class="history-row" href="/leads/{{ lead.id }}">
       <div class="history-top">
         <span class="stage-tag {% if lead.stage == 'won' %}stage-won{% elif lead.stage == 'lost' %}stage-lost{% endif %}">

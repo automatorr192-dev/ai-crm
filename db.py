@@ -14,17 +14,28 @@ import re
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import case, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import selectinload
 
 from auth import hash_password
-from models import CLOSED_STAGES, Contact, Lead, LeadEvent, Message, Note, User
+from models import (
+    CLOSED_STAGES,
+    Attachment,
+    Contact,
+    Lead,
+    LeadEvent,
+    Message,
+    Note,
+    User,
+    local,
+)
 
 DATA_DIR = os.environ.get("DATA_DIR") or ("/data" if os.path.isdir("/data") else "data")
 
 # Окно, внутри которого одинаковая заявка считается повтором, а не новой.
 DEDUPE_SECONDS = int(os.environ.get("DEDUPE_SECONDS", 300))
+STALE_DAYS = int(os.environ.get("STALE_DAYS", 3))
 
 
 def database_url() -> str:
@@ -72,6 +83,17 @@ async def create_user(login: str, name: str, password: str, role: str = "manager
     )
     async with Session() as session:
         session.add(user)
+        await session.commit()
+        await session.refresh(user)
+    return user
+
+
+async def set_access(user_id: int, own_only: bool, active: bool) -> User | None:
+    async with Session() as session:
+        user = await session.get(User, user_id)
+        if user is None:
+            return None
+        user.own_only, user.active = own_only, active
         await session.commit()
         await session.refresh(user)
     return user
@@ -162,10 +184,24 @@ def contains(column, needle: str):
     return or_(*[column.like(f"%{variant}%") for variant in variants])
 
 
-async def all_contacts(search: str | None = None, limit: int = 200) -> list[Contact]:
+def can_see(lead: Lead, viewer: User | None) -> bool:
+    return viewer is None or viewer.sees_all or lead.assignee_id in (None, viewer.id)
+
+
+def _mine(viewer: User | None):
+    if viewer is None or viewer.sees_all:
+        return None
+    return or_(Lead.assignee_id == viewer.id, Lead.assignee_id.is_(None))
+
+
+async def all_contacts(
+    search: str | None = None, limit: int = 200, viewer: User | None = None
+) -> list[Contact]:
     query = select(Contact).options(selectinload(Contact.leads)).order_by(Contact.created_at.desc())
     if search:
         query = query.where(or_(contains(Contact.name, search), contains(Contact.contact, search)))
+    if (scope := _mine(viewer)) is not None:
+        query = query.where(Contact.leads.any(scope))
     async with Session() as session:
         return list((await session.execute(query.limit(limit))).scalars())
 
@@ -202,6 +238,10 @@ async def add_lead(
     urgency: str | None = None,
     draft_reply: str | None = None,
     source: str | None = None,
+    utm: dict | None = None,
+    consent: bool = False,
+    user_id: int | None = None,
+    assignee_id: int | None = None,
 ) -> tuple[Lead, bool]:
     """Сохранить заявку. Второе значение — новая она или повтор уже сохранённой.
 
@@ -234,13 +274,24 @@ async def add_lead(
         source=source,
         fingerprint=mark,
         contact_id=contact.id if contact else None,
+        assignee_id=assignee_id,
+        consent_at=datetime.now(UTC) if consent else None,
+        **{f"utm_{k}": (utm or {}).get(k) or None for k in ("source", "medium", "campaign")},
     )
-    lead.events.append(LeadEvent(kind="created", note=source))
+    lead.events.append(LeadEvent(kind="created", note=source, user_id=user_id))
     async with Session() as session:
         session.add(lead)
         await session.commit()
         await session.refresh(lead)
     return lead, True
+
+
+def _stale():
+    last = (
+        select(func.max(LeadEvent.created_at)).where(LeadEvent.lead_id == Lead.id).scalar_subquery()
+    )
+    since = datetime.now(UTC) - timedelta(days=STALE_DAYS)
+    return Lead.stage.not_in(CLOSED_STAGES) & (last < since)
 
 
 def _feed_query(
@@ -250,6 +301,8 @@ def _feed_query(
     assignee_id: int | None = None,
     search: str | None = None,
     overdue: bool = False,
+    stale: bool = False,
+    viewer: User | None = None,
 ):
     query = (
         select(Lead)
@@ -264,6 +317,10 @@ def _feed_query(
         query = query.where(Lead.source == source)
     if assignee_id:
         query = query.where(Lead.assignee_id == assignee_id)
+    if (scope := _mine(viewer)) is not None:
+        query = query.where(scope)
+    if stale:
+        query = query.where(_stale())
     if overdue:
         query = query.where(Lead.due_at.is_not(None), Lead.due_at < datetime.now(UTC))
         query = query.where(Lead.stage.not_in(CLOSED_STAGES))
@@ -299,12 +356,14 @@ async def board(limit_per_stage: int = 50, **filters) -> dict[str, list[Lead]]:
     return result
 
 
-async def count_by_stage(source: str | None = None) -> dict[str, int]:
+async def count_by_stage(source: str | None = None, viewer: User | None = None) -> dict[str, int]:
     """Счётчики стадий считает база группировкой, а не питон перебором ленты: лента
     ограничена лимитом, и счётчик по ней показывал бы «сколько влезло на экран»."""
     query = select(Lead.stage, func.count()).group_by(Lead.stage)
     if source:
         query = query.where(Lead.source == source)
+    if (scope := _mine(viewer)) is not None:
+        query = query.where(scope)
     async with Session() as session:
         return {stage: count for stage, count in await session.execute(query)}
 
@@ -321,6 +380,7 @@ async def get_lead(lead_id: int, full: bool = False) -> Lead | None:
                 selectinload(Lead.notes).selectinload(Note.author),
                 selectinload(Lead.assignee),
                 selectinload(Lead.contact).selectinload(Contact.leads),
+                selectinload(Lead.attachments).selectinload(Attachment.author),
             )
         )
         return rows.scalar_one_or_none()
@@ -398,11 +458,12 @@ async def set_due(lead_id: int, due_at: datetime | None, user_id: int | None = N
         if lead is None:
             return None
         lead.due_at = due_at
+        lead.reminded_at = None
         session.add(
             LeadEvent(
                 lead_id=lead_id,
                 kind="due",
-                note=due_at.strftime("%d.%m %H:%M") if due_at else "снят",
+                note=local(due_at).strftime("%d.%m %H:%M") if due_at else "снят",
                 user_id=user_id,
             )
         )
@@ -442,6 +503,132 @@ async def mark_failed(lead_id: int, reason: str) -> None:
     """Модель не ответила. Заявка на месте, но в истории это должно остаться:
     иначе непонятно, почему карточка без темы."""
     await _touch(lead_id, "mark_failed", reason[:200], None)
+
+
+async def due_for_reminder(now: datetime | None = None) -> list[Lead]:
+    async with Session() as session:
+        rows = await session.execute(
+            select(Lead)
+            .options(selectinload(Lead.assignee))
+            .where(
+                Lead.due_at.is_not(None),
+                Lead.due_at <= (now or datetime.now(UTC)),
+                Lead.reminded_at.is_(None),
+                Lead.stage.not_in(CLOSED_STAGES),
+            )
+            .order_by(Lead.due_at)
+            .limit(50)
+        )
+        return list(rows.scalars())
+
+
+async def mark_reminded(lead_id: int) -> None:
+    async with Session() as session:
+        lead = await session.get(Lead, lead_id)
+        if lead is not None:
+            lead.reminded_at = datetime.now(UTC)
+            await session.commit()
+
+
+async def mark_synced(lead_id: int, external_id: str, target: str) -> None:
+    async with Session() as session:
+        lead = await session.get(Lead, lead_id)
+        if lead is None:
+            return
+        lead.external_id = external_id[:80]
+        note = f"{target} #{external_id}"[:200]
+        session.add(LeadEvent(lead_id=lead_id, kind="synced", note=note))
+        await session.commit()
+
+
+async def mark_sync_failed(lead_id: int, reason: str) -> None:
+    await _touch(lead_id, "sync_failed", reason[:200], None)
+
+
+async def add_attachment(lead_id: int, user_id: int | None, name: str, size: int, path: str):
+    item = Attachment(lead_id=lead_id, user_id=user_id, name=name, size=size, path=path)
+    async with Session() as session:
+        session.add(item)
+        session.add(LeadEvent(lead_id=lead_id, kind="file", note=name[:200], user_id=user_id))
+        await session.commit()
+        await session.refresh(item)
+    return item
+
+
+async def get_attachment(attachment_id: int) -> Attachment | None:
+    async with Session() as session:
+        rows = await session.execute(
+            select(Attachment)
+            .where(Attachment.id == attachment_id)
+            .options(selectinload(Attachment.lead))
+        )
+        return rows.scalar_one_or_none()
+
+
+async def digest(limit: int = 5) -> dict:
+    now = datetime.now(UTC)
+    day_ago = now - timedelta(days=1)
+    async with Session() as session:
+        fresh = (
+            await session.execute(select(func.count()).where(Lead.created_at >= day_ago))
+        ).scalar_one()
+        unassigned = (
+            await session.execute(
+                select(func.count()).where(Lead.stage == "new", Lead.assignee_id.is_(None))
+            )
+        ).scalar_one()
+        won = (
+            await session.execute(
+                select(func.count(), func.sum(Lead.amount)).where(
+                    Lead.stage == "won", Lead.updated_at >= day_ago
+                )
+            )
+        ).one()
+        overdue = list(
+            (
+                await session.execute(
+                    select(Lead)
+                    .where(
+                        Lead.due_at.is_not(None),
+                        Lead.due_at < now,
+                        Lead.stage.not_in(CLOSED_STAGES),
+                    )
+                    .order_by(Lead.due_at)
+                )
+            ).scalars()
+        )
+        stale = list(
+            (
+                await session.execute(select(Lead).where(_stale()).order_by(Lead.created_at))
+            ).scalars()
+        )
+    return {
+        "fresh": fresh,
+        "unassigned": unassigned,
+        "won_count": won[0] or 0,
+        "won_amount": Decimal(won[1] or 0),
+        "overdue": overdue[:limit],
+        "overdue_count": len(overdue),
+        "stale": stale[:limit],
+        "stale_count": len(stale),
+    }
+
+
+async def journal(
+    user_id: int | None = None, kind: str | None = None, limit: int = 300
+) -> list[LeadEvent]:
+    query = (
+        select(LeadEvent)
+        .options(selectinload(LeadEvent.author), selectinload(LeadEvent.lead))
+        .order_by(LeadEvent.created_at.desc(), LeadEvent.id.desc())
+        .limit(limit)
+    )
+    if user_id:
+        query = query.where(LeadEvent.user_id == user_id)
+    if kind:
+        query = query.where(LeadEvent.kind == kind)
+    async with Session() as session:
+        return list((await session.execute(query)).scalars())
 
 
 # --- переписка с клиентом -------------------------------------------------------
@@ -542,25 +729,25 @@ async def mark_hot(lead_id: int, summary: str) -> Lead | None:
 # --- отчёт ---------------------------------------------------------------------
 
 
-async def report(days: int = 30) -> dict:
+async def report(days: int = 30, viewer: User | None = None) -> dict:
     """Цифры, ради которых CRM вообще заводят: сколько пришло, сколько дошло до денег,
     где встало и как быстро отвечаем."""
     since = datetime.now(UTC) - timedelta(days=days)
+    scope = _mine(viewer)
+    period = Lead.created_at >= since if scope is None else (Lead.created_at >= since) & scope
 
     async with Session() as session:
         by_stage = {
             stage: count
             for stage, count in await session.execute(
-                select(Lead.stage, func.count())
-                .where(Lead.created_at >= since)
-                .group_by(Lead.stage)
+                select(Lead.stage, func.count()).where(period).group_by(Lead.stage)
             )
         }
         by_source = {
             (source or "не указан"): count
             for source, count in await session.execute(
                 select(Lead.source, func.count())
-                .where(Lead.created_at >= since)
+                .where(period)
                 .group_by(Lead.source)
                 .order_by(func.count().desc())
             )
@@ -571,21 +758,37 @@ async def report(days: int = 30) -> dict:
                 select(User.name, func.count(Lead.id), func.sum(Lead.amount))
                 .select_from(Lead)
                 .join(User, Lead.assignee_id == User.id, isouter=True)
-                .where(Lead.created_at >= since)
+                .where(period)
                 .group_by(User.name)
                 .order_by(func.count(Lead.id).desc())
             )
         ]
+        open_deals = Lead.stage.not_in(CLOSED_STAGES)
         in_work = (
             await session.execute(
-                select(func.sum(Lead.amount)).where(Lead.stage.not_in(CLOSED_STAGES))
+                select(func.sum(Lead.amount)).where(
+                    open_deals if scope is None else open_deals & scope
+                )
             )
         ).scalar_one() or 0
         won = (
-            await session.execute(
-                select(func.sum(Lead.amount)).where(Lead.stage == "won", Lead.created_at >= since)
-            )
+            await session.execute(select(func.sum(Lead.amount)).where(period, Lead.stage == "won"))
         ).scalar_one() or 0
+        by_campaign = [
+            (source, campaign or "без кампании", count, deals or 0, money or 0)
+            for source, campaign, count, deals, money in await session.execute(
+                select(
+                    Lead.utm_source,
+                    Lead.utm_campaign,
+                    func.count(),
+                    func.sum(case((Lead.stage == "won", 1), else_=0)),
+                    func.sum(case((Lead.stage == "won", Lead.amount), else_=None)),
+                )
+                .where(period, Lead.utm_source.is_not(None))
+                .group_by(Lead.utm_source, Lead.utm_campaign)
+                .order_by(func.count().desc())
+            )
+        ]
 
         # Время до первой реакции человека: от создания заявки до первого события,
         # которое сделал сотрудник. Разметка моделью тут не считается — она не ответ.
@@ -593,7 +796,7 @@ async def report(days: int = 30) -> dict:
             select(Lead.created_at, func.min(LeadEvent.created_at))
             .select_from(Lead)
             .join(LeadEvent, LeadEvent.lead_id == Lead.id)
-            .where(LeadEvent.user_id.is_not(None), Lead.created_at >= since)
+            .where(LeadEvent.user_id.is_not(None), period)
             .group_by(Lead.id, Lead.created_at)
         )
 
@@ -612,6 +815,7 @@ async def report(days: int = 30) -> dict:
         "by_stage": by_stage,
         "by_source": by_source,
         "by_user": by_user,
+        "by_campaign": by_campaign,
         "in_work_amount": Decimal(in_work),
         "won_amount": Decimal(won),
         "conversion": round(by_stage.get("won", 0) / total * 100) if total else 0,

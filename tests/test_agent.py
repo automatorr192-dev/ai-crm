@@ -197,7 +197,9 @@ async def test_public_form_returns_telegram_link_when_bot_is_on(database, client
     monkeypatch.setattr(tgbot, "USERNAME", "studio_bot")
     monkeypatch.setattr(tgbot, "_SECRET", b"secret")
 
-    response = client.post("/api/public/lead", json={"text": "Хочу бота", "contact": "@me"})
+    response = client.post(
+        "/api/public/lead", json={"consent": True, "text": "Хочу бота", "contact": "@me"}
+    )
 
     link = response.json()["telegram"]
     assert link.startswith("https://t.me/studio_bot?start=l")

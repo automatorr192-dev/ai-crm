@@ -37,6 +37,10 @@
   <div class="head-row">
     <h1>Заявки</h1>
     <span class="muted">{{ leads | length }} на экране</span>
+    <div class="actions">
+      <a class="btn" href="/export/leads.xlsx{{ '?' ~ query if query }}" download>Выгрузить в Excel</a>
+      {% if me.can_edit %}<a class="btn primary" href="/leads/new">+ Заявка</a>{% endif %}
+    </div>
   </div>
 
   <form class="search" method="get" action="/leads">
@@ -49,7 +53,7 @@
   </form>
 
   <div class="filters">
-    <a class="chip-link" href="/leads" aria-current="{{ 'true' if not filters.stage and not filters.overdue else 'false' }}">
+    <a class="chip-link" href="/leads" aria-current="{{ 'true' if not filters.stage and not filters.overdue and not filters.stale else 'false' }}">
       все <b>{{ counts.values() | sum }}</b>
     </a>
     {% for stage in stages %}
@@ -60,6 +64,9 @@
     {% endfor %}
     <a class="chip-link" href="/leads?overdue=true" aria-current="{{ 'true' if filters.overdue else 'false' }}">
       просроченные
+    </a>
+    <a class="chip-link" href="/leads?stale=true" aria-current="{{ 'true' if filters.stale else 'false' }}">
+      без движения {{ stale_days }}+ дн.
     </a>
   </div>
 
@@ -108,7 +115,7 @@
 <script>
   // Новая заявка приезжает в открытый список без перезагрузки — но только если человек
   // не смотрит отфильтрованную выборку, куда она могла и не попасть.
-  const PLAIN_LIST = {{ (not filters.stage and not filters.search and not filters.overdue) | tojson }};
+  const PLAIN_LIST = {{ (not filters.stage and not filters.search and not filters.overdue and not filters.stale) | tojson }};
   window.onCrmEvent.push((kind) => {
     if (kind === 'lead.new' && PLAIN_LIST) say('Новая заявка — обновите список');
   });

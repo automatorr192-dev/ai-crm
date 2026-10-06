@@ -8,7 +8,7 @@
 (как дошли до нынешнего состояния).
 """
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Literal
 
@@ -52,7 +52,26 @@ EVENTS: tuple[str, ...] = (
     "note",
     "due",
     "amount",
+    "synced",
+    "sync_failed",
+    "file",
 )
+
+
+MSK = timezone(timedelta(hours=3), "MSK")
+
+
+def local(moment: datetime | None) -> datetime:
+    moment = moment or datetime.now(UTC)
+    return (moment if moment.tzinfo else moment.replace(tzinfo=UTC)).astimezone(MSK)
+
+
+def seconds_until(hour: int) -> float:
+    now = local(None)
+    target = now.replace(hour=hour, minute=0, second=0, microsecond=0)
+    if target <= now:
+        target += timedelta(days=1)
+    return (target - now).total_seconds()
 
 
 def _in(column: str, values: tuple[str, ...]) -> str:
@@ -80,6 +99,7 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     role: Mapped[str] = mapped_column(String(20), default="manager", server_default="manager")
     active: Mapped[bool] = mapped_column(Boolean, default=True, server_default=text("1"))
+    own_only: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     def __repr__(self) -> str:
@@ -88,6 +108,10 @@ class User(Base):
     @property
     def can_edit(self) -> bool:
         return self.role in ("admin", "manager")
+
+    @property
+    def sees_all(self) -> bool:
+        return self.role == "admin" or not self.own_only
 
 
 class Contact(Base):
@@ -191,6 +215,13 @@ class Lead(Base):
     # колонками: набор полей меняется вместе с промптом, и миграция на каждое — лишнее.
     qualification: Mapped[str | None] = mapped_column(Text)
 
+    utm_source: Mapped[str | None] = mapped_column(String(120), index=True)
+    utm_medium: Mapped[str | None] = mapped_column(String(120))
+    utm_campaign: Mapped[str | None] = mapped_column(String(120))
+    consent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    reminded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    external_id: Mapped[str | None] = mapped_column(String(80))
+
     contact: Mapped[Contact | None] = relationship(back_populates="leads")
     assignee: Mapped[User | None] = relationship()
     events: Mapped[list["LeadEvent"]] = relationship(
@@ -202,14 +233,20 @@ class Lead(Base):
     messages: Mapped[list["Message"]] = relationship(
         back_populates="lead", cascade="all, delete-orphan", order_by="Message.id"
     )
+    attachments: Mapped[list["Attachment"]] = relationship(
+        back_populates="lead", cascade="all, delete-orphan", order_by="Attachment.id"
+    )
 
     def __repr__(self) -> str:
         return f"<Lead {self.id} {self.stage} {self.topic!r}>"
 
     @property
     def created_local(self) -> str:
-        moment = self.created_at or datetime.now(UTC)
-        return moment.strftime("%H:%M")
+        return local(self.created_at).strftime("%H:%M")
+
+    @property
+    def due_input(self) -> str:
+        return local(self.due_at).strftime("%Y-%m-%dT%H:%M") if self.due_at else ""
 
     @property
     def title(self) -> str:
@@ -240,8 +277,7 @@ class Note(Base):
 
     @property
     def created_local(self) -> str:
-        moment = self.created_at or datetime.now(UTC)
-        return moment.strftime("%d.%m %H:%M")
+        return local(self.created_at).strftime("%d.%m %H:%M")
 
 
 class LeadEvent(Base):
@@ -274,8 +310,7 @@ class LeadEvent(Base):
 
     @property
     def created_local(self) -> str:
-        moment = self.created_at or datetime.now(UTC)
-        return moment.strftime("%d.%m %H:%M")
+        return local(self.created_at).strftime("%d.%m %H:%M")
 
 
 class Message(Base):
@@ -295,3 +330,24 @@ class Message(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     lead: Mapped[Lead] = relationship(back_populates="messages")
+
+
+class Attachment(Base):
+    __tablename__ = "attachments"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    lead_id: Mapped[int] = mapped_column(ForeignKey("leads.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    name: Mapped[str] = mapped_column(String(200))
+    size: Mapped[int] = mapped_column()
+    path: Mapped[str] = mapped_column(String(300))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    lead: Mapped[Lead] = relationship(back_populates="attachments")
+    author: Mapped[User | None] = relationship()
+
+    @property
+    def size_text(self) -> str:
+        if self.size < 1024 * 1024:
+            return f"{max(1, round(self.size / 1024))} КБ"
+        return f"{self.size / 1024 / 1024:.1f} МБ".replace(".", ",")

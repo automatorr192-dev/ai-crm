@@ -49,6 +49,7 @@
   <div class="head-row">
     <h1>Воронка</h1>
     <span class="muted">Перетащите карточку, чтобы сменить стадию</span>
+    {% if me.can_edit %}<div class="actions"><a class="btn primary" href="/leads/new">+ Заявка</a></div>{% endif %}
   </div>
 
   <div class="filters">
