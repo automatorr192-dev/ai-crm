@@ -13,7 +13,7 @@ import os
 import time
 import uuid
 from contextlib import asynccontextmanager
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 
 from alembic import command
@@ -38,6 +38,7 @@ from pydantic import BaseModel, Field, ValidationError
 import auth
 import backup
 import db
+import demo
 import export
 import forms
 import notify
@@ -75,6 +76,22 @@ EVENT_RU = {
     "file": "файл",
 }
 MAX_FILE_BYTES = int(os.environ.get("MAX_FILE_MB", 10)) * 1024 * 1024
+COMPANY = {
+    "name": os.environ.get("COMPANY_NAME") or "Студия автоматизации",
+    "details": os.environ.get("COMPANY_DETAILS") or "Самозанятый · договор и чек на каждую оплату",
+    "contact": os.environ.get("COMPANY_CONTACT") or "Telegram @automatorrr",
+    "terms": [
+        term.strip()
+        for term in (
+            os.environ.get("OFFER_TERMS")
+            or "Оплата по этапам: 50% на старте, 50% после приёмки"
+            "|Срок — по согласованному плану работ"
+            "|Месяц поддержки после запуска бесплатно"
+        ).split("|")
+        if term.strip()
+    ],
+}
+OFFER_DAYS = int(os.environ.get("OFFER_DAYS") or 14)
 SOURCES_MANUAL = ("звонок", "почта", "мессенджер", "встреча", "рекомендация", "другое")
 
 
@@ -97,6 +114,9 @@ async def lifespan(app: FastAPI):
     # Бот ассистента живёт в том же процессе, что и CRM: отдельное приложение под него
     # на Amvera тарифицировалось бы отдельно. Без токена он просто не стартует.
     tasks = []
+    if demo.ENABLED:
+        await demo.ensure()
+        tasks.append(asyncio.create_task(demo.nightly()))
     if tgbot.enabled():
         tasks.append(asyncio.create_task(tgbot.run()))
     if notify.enabled():
@@ -127,6 +147,7 @@ if ALLOWED_ORIGINS:
 # uvicorn из любого другого каталога.
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templates"))
 templates.env.filters["msk"] = lambda moment: local(moment).strftime("%d.%m.%Y %H:%M")
+templates.env.globals["demo"] = demo.ENABLED
 
 
 # --- вход ----------------------------------------------------------------------
@@ -224,6 +245,28 @@ async def login(
     )
     log.info("login.ok", user=user.login)
     return response
+
+
+def _signed_in(user: User, request: Request, target: str = "/") -> RedirectResponse:
+    response = RedirectResponse(target or "/", status_code=status.HTTP_303_SEE_OTHER)
+    response.set_cookie(
+        auth.SESSION_COOKIE,
+        auth.make_session(user.id),
+        max_age=auth.SESSION_DAYS * 86400,
+        httponly=True,
+        samesite="lax",
+        secure=request.url.scheme == "https",
+    )
+    return response
+
+
+@app.post("/demo/{who}")
+async def demo_login(request: Request, who: str):
+    user = await demo.entrance(who) if demo.ENABLED else None
+    if user is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Not Found")
+    log.info("demo.login", who=who)
+    return _signed_in(user, request)
 
 
 @app.post("/logout")
@@ -449,6 +492,23 @@ async def lead_card(request: Request, lead_id: int, user: User = Depends(current
 def _back(request: Request, lead_id: int) -> RedirectResponse:
     target = request.headers.get("referer") or f"/leads/{lead_id}"
     return RedirectResponse(target, status_code=status.HTTP_303_SEE_OTHER)
+
+
+@app.get("/leads/{lead_id}/offer")
+async def offer(request: Request, lead_id: int, user: User = Depends(editor)):
+    lead = await visible_lead(lead_id, user, full=True)
+    today = datetime.now(MSK)
+    return templates.TemplateResponse(
+        request,
+        "offer.html",
+        {
+            "lead": lead,
+            "known": db.qualification(lead),
+            "company": COMPANY,
+            "today": f"{today:%d.%m.%Y}",
+            "valid_until": f"{today + timedelta(days=OFFER_DAYS):%d.%m.%Y}",
+        },
+    )
 
 
 @app.post("/leads/{lead_id}/stage")

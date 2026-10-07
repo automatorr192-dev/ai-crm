@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>КП № {{ lead.id }} · {{ lead.title }}</title>
+<style>
+  :root { --ink: #17171a; --ink-2: #4a4a52; --ink-3: #66666e; --line: #e3e3df; --accent: #0d6b62; --soft: #e3f0ee; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font: 14px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); background: #ecece8; -webkit-font-smoothing: antialiased; }
+  .bar { position: sticky; top: 0; z-index: 2; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 10px 16px; background: #fff; border-bottom: 1px solid var(--line); }
+  .bar a { color: var(--ink-3); text-decoration: none; font-size: 13.5px; }
+  .bar .hint { color: var(--ink-3); font-size: 13px; margin-right: auto; }
+  .btn { font: inherit; font-size: 14px; padding: 8px 15px; border-radius: 999px; border: 1px solid #8b8b83; background: #fff; cursor: pointer; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .sheet { width: min(210mm, 100%); min-height: 297mm; margin: 24px auto; background: #fff; padding: 18mm 16mm; box-shadow: 0 10px 40px -20px rgba(0,0,0,.35); }
+  header { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; padding-bottom: 14px; border-bottom: 2px solid var(--accent); }
+  .brand b { display: block; font-size: 18px; letter-spacing: -.01em; }
+  .brand span, .meta { color: var(--ink-3); font-size: 12.5px; }
+  .meta { text-align: right; }
+  h1 { font-size: 22px; letter-spacing: -.015em; margin: 26px 0 4px; }
+  .for { color: var(--ink-2); margin-bottom: 20px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); margin: 22px 0 8px; }
+  .task { white-space: pre-wrap; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 12px; color: var(--ink-3); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  td { padding: 9px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  [contenteditable] { outline: none; border-radius: 4px; }
+  [contenteditable]:hover, [contenteditable]:focus { background: var(--soft); }
+  .total td { border-bottom: 0; font-weight: 650; font-size: 15px; padding-top: 12px; }
+  .del { border: 0; background: none; color: var(--ink-3); cursor: pointer; font-size: 16px; line-height: 1; }
+  .add { margin-top: 10px; }
+  ul.terms { padding-left: 18px; }
+  ul.terms li + li { margin-top: 4px; }
+  footer { margin-top: 34px; display: flex; justify-content: space-between; gap: 20px; color: var(--ink-2); }
+  @media print {
+    @page { size: A4; margin: 0; }
+    body { background: #fff; }
+    .bar, .del, .add { display: none !important; }
+    .sheet { margin: 0; box-shadow: none; width: 210mm; }
+    [contenteditable]:hover, [contenteditable]:focus { background: none; }
+  }
+  @media (max-width: 640px) { .sheet { padding: 20px 14px; margin: 0; min-height: 0; } header { flex-direction: column; } .meta { text-align: left; } }
+</style>
+</head>
+<body>
+<div class="bar">
+  <a href="/leads/{{ lead.id }}">← к сделке</a>
+  <span class="hint">Текст и цены правятся прямо на листе</span>
+  <button class="btn primary" type="button" onclick="print()">Сохранить в PDF</button>
+</div>
+
+<article class="sheet">
+  <header>
+    <div class="brand">
+      <b contenteditable="true">{{ company.name }}</b>
+      <span contenteditable="true">{{ company.details }}</span>
+    </div>
+    <div class="meta">
+      Коммерческое предложение № {{ lead.id }}<br>
+      от {{ today }}<br>
+      действует до {{ valid_until }}
+    </div>
+  </header>
+
+  <h1 contenteditable="true">{{ (lead.topic or 'Предложение') | capitalize }}</h1>
+  <p class="for">Для: <span contenteditable="true">{{ lead.title }}</span>{% if lead.client_contact %} · {{ lead.client_contact }}{% endif %}</p>
+
+  <h2>Задача</h2>
+  <p class="task" contenteditable="true">{{ known.get('task') or lead.text }}</p>
+
+  <h2>Состав и стоимость</h2>
+  <table>
+    <thead><tr><th>Что делаем</th><th class="num">Кол-во</th><th class="num">Цена, ₽</th><th class="num">Сумма, ₽</th><th></th></tr></thead>
+    <tbody id="lines">
+      <tr>
+        <td contenteditable="true">{{ (lead.topic or 'Работы по задаче') | capitalize }}</td>
+        <td class="num" contenteditable="true">1</td>
+        <td class="num" contenteditable="true">{{ '{:,.0f}'.format(lead.amount).replace(',', ' ') if lead.amount else '0' }}</td>
+        <td class="num" data-sum></td>
+        <td><button class="del" type="button" aria-label="Убрать строку">×</button></td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr class="total"><td colspan="3">Итого</td><td class="num" id="total"></td><td></td></tr>
+    </tfoot>
+  </table>
+  <button class="btn add" type="button" id="add">+ строка</button>
+
+  <h2>Условия</h2>
+  <ul class="terms" contenteditable="true">
+    {% for term in company.terms %}<li>{{ term }}</li>{% endfor %}
+  </ul>
+
+  <footer>
+    <div>
+      {% if lead.assignee %}<b contenteditable="true">{{ lead.assignee.name }}</b><br>{% endif %}
+      <span contenteditable="true">{{ company.contact }}</span>
+    </div>
+    <div class="meta">Цена фиксируется в договоре</div>
+  </footer>
+</article>
+
+<script>
+  const lines = document.getElementById('lines');
+  const number = cell => parseFloat(cell.textContent.replace(/\s/g, '').replace(',', '.')) || 0;
+  const money = value => Math.round(value).toLocaleString('ru-RU');
+  function recount() {
+    let total = 0;
+    lines.querySelectorAll('tr').forEach(row => {
+      const cells = row.querySelectorAll('td');
+      const sum = number(cells[1]) * number(cells[2]);
+      cells[3].textContent = money(sum);
+      total += sum;
+    });
+    document.getElementById('total').textContent = money(total) + ' ₽';
+  }
+  lines.addEventListener('input', recount);
+  lines.addEventListener('click', event => {
+    if (event.target.closest('.del') && lines.rows.length > 1) {
+      event.target.closest('tr').remove();
+      recount();
+    }
+  });
+  document.getElementById('add').addEventListener('click', () => {
+    const row = lines.rows[0].cloneNode(true);
+    row.cells[0].textContent = 'Новая позиция';
+    row.cells[1].textContent = '1';
+    row.cells[2].textContent = '0';
+    lines.append(row);
+    recount();
+    row.cells[0].focus();
+  });
+  recount();
+</script>
+</body>
+</html>

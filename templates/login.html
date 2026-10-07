@@ -9,6 +9,8 @@
     .gate .field { margin-bottom: 14px; }
     .gate input { width: 100%; }
     .gate .btn { width: 100%; justify-content: center; margin-top: 6px; }
+    .demo-in { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+    .demo-in p { font-size: 12.5px; color: var(--ink-3); margin-bottom: 4px; }
     .bad {
       background: var(--high-bg); color: var(--high);
       font-size: 13.5px; padding: 9px 12px; border-radius: var(--r-block); margin-bottom: 16px;
@@ -38,6 +40,14 @@
 
     <input type="hidden" name="next" value="{{ next }}">
     <button class="btn primary">Войти</button>
+
+    {% if demo %}
+    <div class="demo-in">
+      <p>Демо без пароля</p>
+      <button class="btn" formaction="/demo/owner" formnovalidate>Войти как владелец</button>
+      <button class="btn" formaction="/demo/manager" formnovalidate>Войти как менеджер «только свои»</button>
+    </div>
+    {% endif %}
   </form>
 </main>
 {% endblock %}

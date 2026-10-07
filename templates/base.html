@@ -127,6 +127,7 @@
     .exit { font: inherit; font-size: 13.5px; background: none; border: 0; color: var(--ink-3); cursor: pointer; padding: 4px; }
     .exit:hover { color: var(--ink); }
 
+    .demo-strip { background: var(--accent); color: var(--accent-ink); font-size: 12.5px; text-align: center; padding: 5px 12px; }
     .wrap { max-width: 1240px; margin: 0 auto; padding: 22px 20px 80px; }
     .narrow { max-width: 780px; }
 
@@ -256,6 +257,9 @@
   </style>
 </head>
 <body>
+  {% if demo %}
+  <p class="demo-strip">Демо-версия: клиенты и сделки выдуманы, всё сбрасывается каждую ночь</p>
+  {% endif %}
   {% if not hide_nav %}
   <nav class="nav">
     <div class="nav-in">

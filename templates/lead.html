@@ -267,6 +267,7 @@
             </form>
           </div>
           {% if lead.overdue %}<p class="overdue" style="font-size:13.5px">Срок прошёл</p>{% endif %}
+          <a class="btn" href="/leads/{{ lead.id }}/offer" style="margin-top:6px">Коммерческое предложение</a>
         </div>
         {% else %}
         <p class="muted" style="margin-top:14px">
