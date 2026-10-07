@@ -506,3 +506,41 @@ async def test_oversized_file_is_refused(database, manager, monkeypatch, tmp_pat
     response = manager.post(f"/leads/{lead.id}/files", files={"file": ("big.bin", b"x" * 11)})
     assert response.status_code == 413
     assert (await db.get_lead(lead.id, full=True)).attachments == []
+
+
+async def test_new_lead_reaches_max_chat(database, monkeypatch):
+    import maxbot
+
+    calls = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return httpx.Response(200, json={"message": {}})
+
+    monkeypatch.setattr(maxbot, "TOKEN", "max-token")
+    monkeypatch.setattr(maxbot, "CHATS", [555])
+    monkeypatch.setattr(maxbot, "TRANSPORT", httpx.MockTransport(handler))
+    monkeypatch.setattr(notify, "CHATS", [])
+    monkeypatch.setattr(notify, "PUBLIC_URL", "https://crm.example.ru")
+    monkeypatch.setattr(tgbot, "enabled", lambda: False)
+
+    lead, _ = await db.add_lead("Полина", "@p", "нужен бот", source="сайт")
+    await app_module.deliver(lead.id)
+
+    [call] = calls
+    assert str(call.url).startswith("https://platform-api2.max.ru/messages?chat_id=555")
+    assert call.headers["authorization"] == "max-token"
+    sent = json.loads(call.content)
+    assert sent["format"] == "html" and "Новая заявка" in sent["text"]
+    button = sent["attachments"][0]["payload"]["buttons"][0][0]
+    assert button == {
+        "type": "link",
+        "text": "Открыть в CRM",
+        "url": f"https://crm.example.ru/leads/{lead.id}",
+    }
+
+
+def test_max_trusts_the_russian_root_certificate():
+    import maxbot
+
+    assert maxbot._trust().cert_store_stats()["x509_ca"] > 100

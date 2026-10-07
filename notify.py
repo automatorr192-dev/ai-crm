@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 
 import db
+import maxbot
 import tgbot
 from models import local, seconds_until
 from observability import log
@@ -23,7 +24,7 @@ DIGEST_HOUR = int(os.environ.get("DIGEST_HOUR", 9))
 
 
 def enabled() -> bool:
-    return bool(CHATS) and tgbot.enabled()
+    return (bool(CHATS) and tgbot.enabled()) or maxbot.enabled()
 
 
 def _button(lead_id: int | None, path: str = "") -> tuple[str, str] | None:
@@ -65,9 +66,14 @@ def reminder_text(lead) -> str:
 
 
 async def _broadcast(text: str, lead_id: int | None, path: str = "") -> bool:
+    button = _button(lead_id, path)
     sent = False
-    for chat in CHATS:
-        sent = await tgbot.send(chat, text, html=True, button=_button(lead_id, path)) or sent
+    if tgbot.enabled():
+        for chat in CHATS:
+            sent = await tgbot.send(chat, text, html=True, button=button) or sent
+    if maxbot.enabled():
+        for chat in maxbot.CHATS:
+            sent = await maxbot.send(chat, text, button) or sent
     return sent
 
 
