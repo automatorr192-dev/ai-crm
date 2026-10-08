@@ -21,6 +21,14 @@ TOKEN = os.environ.get("TG_BOT_TOKEN", "")
 USERNAME = os.environ.get("TG_BOT_USERNAME", "").lstrip("@")
 _SECRET = (os.environ.get("SESSION_SECRET") or os.environ.get("WEBHOOK_SECRET") or "").encode()
 
+# Видно в пустом чате ещё до нажатия «Начать» — единственный шанс объяснить, зачем бот.
+DESCRIPTION = (
+    "Ассистент по вашей заявке.\n\n"
+    "Оставьте заявку на сайте и нажмите «Продолжить в Telegram». Я уточню пару деталей, "
+    "чтобы менеджер позвонил уже с готовым решением, и помогу выбрать время созвона."
+)
+SHORT_DESCRIPTION = "Уточню детали вашей заявки и назначу созвон: менеджер позвонит уже с решением."
+
 _bot = None
 
 
@@ -143,6 +151,8 @@ async def run() -> None:
     dispatcher = Dispatcher()
     dispatcher.include_router(_router())
     try:
+        await _bot.set_my_description(description=DESCRIPTION)
+        await _bot.set_my_short_description(short_description=SHORT_DESCRIPTION)
         await dispatcher.start_polling(_bot, handle_signals=False)
     except asyncio.CancelledError:
         pass
