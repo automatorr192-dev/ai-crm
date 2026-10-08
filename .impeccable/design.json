@@ -1,686 +1,679 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-07T13:39:00+00:00",
+  "generatedAt": "2026-10-08T17:12:04+00:00",
   "title": "Design System: AI-CRM",
   "extensions": {
     "colorMeta": {
-      "ballpoint-ink": {
+      "engrave": {
         "role": "primary",
-        "displayName": "Шариковая ручка",
-        "canonical": "#2b4cc8",
+        "displayName": "Гравюрная зелень",
+        "canonical": "#22574a",
         "tonalRamp": [
-          "#020035",
-          "#080775",
-          "#162ca8",
-          "#2f52ce",
-          "#4d77f6",
-          "#7ea1fb",
-          "#b3c8fc",
-          "#e8eefe"
+          "#000f0a",
+          "#012d23",
+          "#164c40",
+          "#396d5f",
+          "#5a8f80",
+          "#7db2a2",
+          "#a0d7c6",
+          "#c5fdec"
         ]
       },
-      "ballpoint-ink-deep": {
+      "engrave-soft": {
         "role": "primary",
-        "displayName": "Нажим ручки",
-        "canonical": "#2140b0",
+        "displayName": "Светлая гравюра",
+        "canonical": "#dbe8e2",
         "tonalRamp": [
-          "#010035",
-          "#060875",
-          "#1630a0",
-          "#3155c6",
-          "#5079ee",
-          "#7ea1fa",
-          "#b2c9fc",
-          "#e8effe"
+          "#050d0a",
+          "#1e2823",
+          "#3a4540",
+          "#59645f",
+          "#7a8680",
+          "#9ca8a3",
+          "#c0cdc7",
+          "#e5f2ec"
         ]
       },
-      "ink-wash": {
+      "engrave-ink": {
         "role": "primary",
-        "displayName": "Чернильная размывка",
-        "canonical": "#e9edfb",
+        "displayName": "Бумага под гравюрой",
+        "canonical": "#f4f8f5",
         "tonalRamp": [
-          "#080b13",
-          "#22252f",
-          "#3e414d",
-          "#5d616d",
-          "#7e828e",
-          "#a1a4b2",
-          "#c5c9d6",
-          "#eaeefc"
+          "#090c0a",
+          "#232624",
+          "#404341",
+          "#5f6260",
+          "#808381",
+          "#a2a6a3",
+          "#c6cac7",
+          "#ecf0ed"
         ]
       },
-      "sheet-white": {
-        "role": "neutral",
-        "displayName": "Белый лист",
-        "canonical": "#fefefd",
+      "violet": {
+        "role": "secondary",
+        "displayName": "Защитная нить",
+        "canonical": "#5d46a8",
         "tonalRamp": [
-          "#0b0b0b",
-          "#252524",
-          "#424241",
-          "#616160",
-          "#828281",
-          "#a5a5a4",
-          "#c9c9c8",
-          "#eeeeed"
+          "#0e002b",
+          "#290662",
+          "#452a8a",
+          "#634caf",
+          "#836fd5",
+          "#a592fc",
+          "#c8c0fd",
+          "#eeecfe"
         ]
       },
-      "desk-grey": {
-        "role": "neutral",
-        "displayName": "Серый стол",
-        "canonical": "#f3f4f7",
+      "violet-soft": {
+        "role": "secondary",
+        "displayName": "Нить на бумаге",
+        "canonical": "#ece8f8",
         "tonalRamp": [
-          "#0a0b0d",
-          "#242527",
-          "#414244",
-          "#606164",
-          "#818285",
-          "#a4a5a8",
-          "#c8c9cc",
-          "#edeef1"
+          "#0c0913",
+          "#26232e",
+          "#43404c",
+          "#625f6c",
+          "#83808e",
+          "#a6a2b1",
+          "#cac6d6",
+          "#f0ecfc"
         ]
       },
-      "hairline-rule": {
-        "role": "neutral",
-        "displayName": "Линейка",
-        "canonical": "#e3e6ec",
-        "tonalRamp": [
-          "#090b0f",
-          "#232529",
-          "#404247",
-          "#5f6166",
-          "#808288",
-          "#a2a5ab",
-          "#c6c9cf",
-          "#ebeef5"
-        ]
-      },
-      "strong-rule": {
-        "role": "neutral",
-        "displayName": "Жирная линейка",
-        "canonical": "#c6ccd7",
-        "tonalRamp": [
-          "#080b12",
-          "#21252d",
-          "#3d424b",
-          "#5c616b",
-          "#7d838d",
-          "#9fa5b0",
-          "#c3c9d4",
-          "#e9effa"
-        ]
-      },
-      "graphite": {
-        "role": "neutral",
-        "displayName": "Графит",
-        "canonical": "#20232b",
-        "tonalRamp": [
-          "#080b12",
-          "#22252d",
-          "#3e424b",
-          "#5d616a",
-          "#7e828c",
-          "#a1a5af",
-          "#c5c9d4",
-          "#eaeef9"
-        ]
-      },
-      "graphite-soft": {
-        "role": "neutral",
-        "displayName": "Мягкий графит",
-        "canonical": "#464b58",
-        "tonalRamp": [
-          "#070b15",
-          "#202530",
-          "#3d424e",
-          "#5c616f",
-          "#7d8290",
-          "#9fa5b4",
-          "#c3c9d8",
-          "#e8eefe"
-        ]
-      },
-      "pencil": {
-        "role": "neutral",
-        "displayName": "Карандаш",
-        "canonical": "#656b7a",
-        "tonalRamp": [
-          "#070b16",
-          "#202531",
-          "#3c4250",
-          "#5b6170",
-          "#7c8292",
-          "#9ea5b5",
-          "#c2c9da",
-          "#e8eeff"
-        ]
-      },
-      "margin-red": {
+      "carmine": {
         "role": "tertiary",
-        "displayName": "Красная линия полей",
-        "canonical": "#c9322a",
+        "displayName": "Кармин",
+        "canonical": "#b4283f",
         "tonalRamp": [
-          "#1e0001",
-          "#4c0202",
-          "#800406",
-          "#b41716",
-          "#dd463b",
-          "#fb7769",
-          "#fcb5aa",
-          "#ffe9e5"
+          "#1e0003",
+          "#4c0011",
+          "#7f0022",
+          "#ae213a",
+          "#d64b5a",
+          "#fa757f",
+          "#ffb1b3",
+          "#ffe8e8"
         ]
       },
-      "marker-today": {
-        "role": "secondary",
-        "displayName": "Маркер «сегодня»",
-        "canonical": "#ffe94d",
+      "carmine-soft": {
+        "role": "tertiary",
+        "displayName": "Светлый кармин",
+        "canonical": "#f8e4e8",
         "tonalRamp": [
-          "#0e0b00",
-          "#2b2502",
-          "#4b4305",
-          "#6e6203",
-          "#938402",
-          "#b9a716",
-          "#e1cb1e",
-          "#fef19a"
+          "#13070a",
+          "#2f2124",
+          "#4d3d41",
+          "#6d5c60",
+          "#8f7d81",
+          "#b29fa3",
+          "#d7c3c7",
+          "#fde9ed"
         ]
       },
-      "marker-late": {
-        "role": "secondary",
-        "displayName": "Маркер «просрочено»",
-        "canonical": "#ffb3c7",
+      "gold": {
+        "role": "tertiary",
+        "displayName": "Золото",
+        "canonical": "#a8822a",
         "tonalRamp": [
-          "#1d0009",
-          "#460922",
-          "#682a3e",
-          "#8b495d",
-          "#b06a7e",
-          "#d58da0",
-          "#fcb0c4",
-          "#fee8ed"
+          "#110a00",
+          "#312200",
+          "#543e08",
+          "#7b5c0b",
+          "#a27c22",
+          "#c69f4b",
+          "#ebc370",
+          "#ffecc9"
         ]
       },
-      "marker-won": {
-        "role": "secondary",
-        "displayName": "Маркер «сделка»",
-        "canonical": "#8be6c2",
+      "gold-soft": {
+        "role": "tertiary",
+        "displayName": "Светлое золото",
+        "canonical": "#f3ead2",
         "tonalRamp": [
-          "#000f08",
-          "#012d1f",
-          "#044f39",
-          "#157255",
-          "#389675",
-          "#5eba97",
-          "#84dfbb",
-          "#c1fee4"
+          "#100a00",
+          "#2b2411",
+          "#49412e",
+          "#69614c",
+          "#8a826c",
+          "#ada58e",
+          "#d1c9b1",
+          "#f7eed6"
         ]
       },
-      "marker-text": {
-        "role": "secondary",
-        "displayName": "Текст под маркером",
-        "canonical": "#1d1f26",
-        "tonalRamp": [
-          "#090b11",
-          "#23252c",
-          "#3f424a",
-          "#5e6169",
-          "#7f828b",
-          "#a2a5ae",
-          "#c6c9d2",
-          "#ebeef8"
-        ]
-      },
-      "on-ink": {
+      "paper": {
         "role": "neutral",
-        "displayName": "На чернилах",
-        "canonical": "#ffffff",
+        "displayName": "Бумага",
+        "canonical": "#eef2ec",
         "tonalRamp": [
-          "#0b0b0b",
-          "#252525",
-          "#424242",
-          "#616161",
-          "#828282",
-          "#a5a5a5",
-          "#c9c9c9",
-          "#eeeeee"
+          "#0a0c08",
+          "#232622",
+          "#40433e",
+          "#5f625d",
+          "#80847e",
+          "#a3a6a1",
+          "#c7cac5",
+          "#ecf0ea"
         ]
       },
-      "ballpoint-ink-dark": {
-        "role": "primary",
-        "displayName": "Шариковая ручка (тёмная тема)",
-        "canonical": "#91a6ff",
+      "sheet": {
+        "role": "neutral",
+        "displayName": "Лист",
+        "canonical": "#fafbf8",
         "tonalRamp": [
-          "#050130",
-          "#151563",
-          "#2d3786",
-          "#4a59ab",
-          "#697bd0",
-          "#8a9ef7",
-          "#b8c6fd",
-          "#e9eefe"
+          "#0b0b0a",
+          "#252523",
+          "#414240",
+          "#61625f",
+          "#828380",
+          "#a4a5a3",
+          "#c8c9c7",
+          "#eeefec"
         ]
       },
-      "ballpoint-ink-deep-dark": {
-        "role": "primary",
-        "displayName": "Нажим ручки (тёмная тема)",
-        "canonical": "#aebdff",
+      "rule": {
+        "role": "neutral",
+        "displayName": "Линия",
+        "canonical": "#cfd8d1",
         "tonalRamp": [
-          "#060032",
-          "#191d52",
-          "#333c74",
-          "#515c97",
-          "#717ebb",
-          "#93a1e1",
-          "#b9c6fc",
-          "#eaeefe"
+          "#070d08",
+          "#202722",
+          "#3d443f",
+          "#5c645d",
+          "#7d857e",
+          "#9fa8a1",
+          "#c3ccc5",
+          "#e8f1ea"
         ]
       },
-      "ink-wash-dark": {
-        "role": "primary",
-        "displayName": "Чернильная размывка (тёмная тема)",
-        "canonical": "#20284a",
+      "rule-strong": {
+        "role": "neutral",
+        "displayName": "Жирная линия",
+        "canonical": "#9fb0a6",
         "tonalRamp": [
-          "#040725",
-          "#1b2243",
-          "#364064",
-          "#545f86",
-          "#7580a9",
-          "#97a3cd",
-          "#bac7f3",
-          "#e9eefe"
+          "#030e08",
+          "#1b2921",
+          "#37463e",
+          "#56665d",
+          "#77877d",
+          "#99aaa0",
+          "#bdcec4",
+          "#e2f4e9"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Чернила",
+        "canonical": "#18241f",
+        "tonalRamp": [
+          "#040e09",
+          "#1c2823",
+          "#384540",
+          "#57655f",
+          "#788680",
+          "#9aa9a2",
+          "#becdc6",
+          "#e3f3ec"
+        ]
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Чернила второго плана",
+        "canonical": "#3d4c46",
+        "tonalRamp": [
+          "#030e0a",
+          "#1b2923",
+          "#374640",
+          "#56655f",
+          "#768780",
+          "#99aaa3",
+          "#bccec7",
+          "#e1f3ec"
+        ]
+      },
+      "ink-3": {
+        "role": "neutral",
+        "displayName": "Вспомогательные чернила",
+        "canonical": "#66756f",
+        "tonalRamp": [
+          "#030e0a",
+          "#1b2823",
+          "#384640",
+          "#56655f",
+          "#778680",
+          "#99a9a3",
+          "#bdcec7",
+          "#e2f3ec"
+        ]
+      },
+      "engrave-dark": {
+        "role": "primary",
+        "displayName": "Гравюрная зелень (тёмная тема)",
+        "canonical": "#7fc2a9",
+        "tonalRamp": [
+          "#000f09",
+          "#032d21",
+          "#094e3b",
+          "#2c6f59",
+          "#4f917a",
+          "#72b59c",
+          "#96dac0",
+          "#bfffe6"
+        ]
+      },
+      "engrave-soft-dark": {
+        "role": "primary",
+        "displayName": "Светлая гравюра (тёмная тема)",
+        "canonical": "#1b3129",
+        "tonalRamp": [
+          "#000f09",
+          "#142a22",
+          "#31483f",
+          "#50675e",
+          "#70897f",
+          "#92aca2",
+          "#b6d0c5",
+          "#dbf6eb"
+        ]
+      },
+      "engrave-ink-dark": {
+        "role": "primary",
+        "displayName": "Бумага под гравюрой (тёмная тема)",
+        "canonical": "#0c1a15",
+        "tonalRamp": [
+          "#030e0a",
+          "#1a2923",
+          "#374640",
+          "#55655f",
+          "#768780",
+          "#98aaa3",
+          "#bccec7",
+          "#e1f4ec"
+        ]
+      },
+      "violet-dark": {
+        "role": "secondary",
+        "displayName": "Защитная нить (тёмная тема)",
+        "canonical": "#ab98f2",
+        "tonalRamp": [
+          "#0f002a",
+          "#2b0b5c",
+          "#462f7f",
+          "#6550a3",
+          "#8672c8",
+          "#a895ef",
+          "#cac0fb",
+          "#eeecfe"
+        ]
+      },
+      "violet-soft-dark": {
+        "role": "secondary",
+        "displayName": "Нить на бумаге (тёмная тема)",
+        "canonical": "#241d3d",
+        "tonalRamp": [
+          "#0d0521",
+          "#261f3f",
+          "#423c5f",
+          "#615b80",
+          "#827ca3",
+          "#a59fc8",
+          "#c9c3ed",
+          "#eeecfe"
+        ]
+      },
+      "carmine-dark": {
+        "role": "tertiary",
+        "displayName": "Кармин (тёмная тема)",
+        "canonical": "#f07a8c",
+        "tonalRamp": [
+          "#1e0005",
+          "#4a0318",
+          "#7c082d",
+          "#a2344b",
+          "#c9576b",
+          "#f17b8d",
+          "#fcb2ba",
+          "#fee8ea"
+        ]
+      },
+      "carmine-soft-dark": {
+        "role": "tertiary",
+        "displayName": "Светлый кармин (тёмная тема)",
+        "canonical": "#3a1820",
+        "tonalRamp": [
+          "#1c0107",
+          "#3b1921",
+          "#5b353d",
+          "#7c545c",
+          "#a0757d",
+          "#c4979f",
+          "#eabbc3",
+          "#fee8ec"
+        ]
+      },
+      "gold-dark": {
+        "role": "tertiary",
+        "displayName": "Золото (тёмная тема)",
+        "canonical": "#d9b65a",
+        "tonalRamp": [
+          "#100a00",
+          "#302301",
+          "#523f02",
+          "#775e0f",
+          "#9f7e16",
+          "#c3a143",
+          "#e8c569",
+          "#feedc3"
+        ]
+      },
+      "gold-soft-dark": {
+        "role": "tertiary",
+        "displayName": "Светлое золото (тёмная тема)",
+        "canonical": "#33290f",
+        "tonalRamp": [
+          "#100a00",
+          "#2e2409",
+          "#4b4127",
+          "#6b6045",
+          "#8d8165",
+          "#b0a487",
+          "#d5c8aa",
+          "#faeece"
+        ]
+      },
+      "paper-dark": {
+        "role": "neutral",
+        "displayName": "Бумага (тёмная тема)",
+        "canonical": "#0f1714",
+        "tonalRamp": [
+          "#060d0a",
+          "#1f2724",
+          "#3b4441",
+          "#5a6460",
+          "#7b8581",
+          "#9da8a4",
+          "#c1ccc8",
+          "#e6f2ed"
         ]
       },
       "sheet-dark": {
         "role": "neutral",
-        "displayName": "Белый лист (тёмная тема)",
-        "canonical": "#191c24",
+        "displayName": "Лист (тёмная тема)",
+        "canonical": "#15201c",
         "tonalRamp": [
-          "#080b12",
-          "#22252d",
-          "#3e424b",
-          "#5d616b",
-          "#7e828c",
-          "#a1a5b0",
-          "#c5c9d4",
-          "#eaeefa"
+          "#040e0a",
+          "#1d2824",
+          "#394541",
+          "#586560",
+          "#798681",
+          "#9ba9a3",
+          "#bfcdc7",
+          "#e4f3ed"
         ]
       },
-      "desk-dark": {
+      "rule-dark": {
         "role": "neutral",
-        "displayName": "Серый стол (тёмная тема)",
-        "canonical": "#12141a",
+        "displayName": "Линия (тёмная тема)",
+        "canonical": "#26342e",
         "tonalRamp": [
-          "#090b11",
-          "#23252b",
-          "#3f4249",
-          "#5e6169",
-          "#7f828a",
-          "#a2a5ad",
-          "#c6c9d2",
-          "#ebeef7"
+          "#030e09",
+          "#1b2923",
+          "#37463f",
+          "#56655f",
+          "#77877f",
+          "#99aaa2",
+          "#bdcec6",
+          "#e2f3eb"
         ]
       },
-      "hairline-rule-dark": {
+      "rule-strong-dark": {
         "role": "neutral",
-        "displayName": "Линейка (тёмная тема)",
-        "canonical": "#262a35",
+        "displayName": "Жирная линия (тёмная тема)",
+        "canonical": "#3d5048",
         "tonalRamp": [
-          "#080b14",
-          "#212530",
-          "#3d424e",
-          "#5c616e",
-          "#7d828f",
-          "#a0a5b3",
-          "#c3c9d7",
-          "#e9eefd"
+          "#010f09",
+          "#182922",
+          "#34473f",
+          "#53665e",
+          "#73887f",
+          "#96aba2",
+          "#b9cfc5",
+          "#def5eb"
         ]
       },
-      "strong-rule-dark": {
+      "ink-dark": {
         "role": "neutral",
-        "displayName": "Жирная линейка (тёмная тема)",
-        "canonical": "#3a404e",
+        "displayName": "Чернила (тёмная тема)",
+        "canonical": "#e6eee9",
         "tonalRamp": [
-          "#070b16",
-          "#1f2532",
-          "#3c4250",
-          "#5b6170",
-          "#7b8292",
-          "#9ea5b6",
-          "#c2c9da",
-          "#e8eefe"
+          "#080d09",
+          "#212723",
+          "#3d4440",
+          "#5c635f",
+          "#7d8480",
+          "#a0a7a2",
+          "#c4cbc6",
+          "#e9f1ec"
         ]
       },
-      "graphite-dark": {
+      "ink-2-dark": {
         "role": "neutral",
-        "displayName": "Графит (тёмная тема)",
-        "canonical": "#e9ebf0",
+        "displayName": "Чернила второго плана (тёмная тема)",
+        "canonical": "#b9c7c0",
         "tonalRamp": [
-          "#0a0b0e",
-          "#242529",
-          "#404246",
-          "#5f6165",
-          "#808287",
-          "#a3a5aa",
-          "#c7c9ce",
-          "#eceef3"
+          "#050e09",
+          "#1d2823",
+          "#39453f",
+          "#58655f",
+          "#79867f",
+          "#9ba9a2",
+          "#bfcdc6",
+          "#e4f3eb"
         ]
       },
-      "graphite-soft-dark": {
+      "ink-3-dark": {
         "role": "neutral",
-        "displayName": "Мягкий графит (тёмная тема)",
-        "canonical": "#b9bdc9",
+        "displayName": "Вспомогательные чернила (тёмная тема)",
+        "canonical": "#8a9a93",
         "tonalRamp": [
-          "#080b13",
-          "#22252e",
-          "#3e424c",
-          "#5d616b",
-          "#7e828d",
-          "#a1a5b0",
-          "#c5c9d5",
-          "#eaeefb"
-        ]
-      },
-      "pencil-dark": {
-        "role": "neutral",
-        "displayName": "Карандаш (тёмная тема)",
-        "canonical": "#949aa8",
-        "tonalRamp": [
-          "#070b14",
-          "#202530",
-          "#3d424e",
-          "#5c616e",
-          "#7c8290",
-          "#9fa5b3",
-          "#c3c9d8",
-          "#e8eefe"
-        ]
-      },
-      "margin-red-dark": {
-        "role": "tertiary",
-        "displayName": "Красная линия полей (тёмная тема)",
-        "canonical": "#ff8478",
-        "tonalRamp": [
-          "#1e0001",
-          "#4c0104",
-          "#80040b",
-          "#a6332e",
-          "#cd584e",
-          "#f57b70",
-          "#fcb4ab",
-          "#ffe9e6"
-        ]
-      },
-      "marker-today-dark": {
-        "role": "secondary",
-        "displayName": "Маркер «сегодня» (тёмная тема)",
-        "canonical": "#f2dc3c",
-        "tonalRamp": [
-          "#0e0b00",
-          "#2b2502",
-          "#4b4305",
-          "#6e6204",
-          "#938402",
-          "#b9a717",
-          "#e1cb1f",
-          "#fef19a"
-        ]
-      },
-      "marker-late-dark": {
-        "role": "secondary",
-        "displayName": "Маркер «просрочено» (тёмная тема)",
-        "canonical": "#f59bb5",
-        "tonalRamp": [
-          "#1d010a",
-          "#490222",
-          "#6e223e",
-          "#93435d",
-          "#b8647e",
-          "#de87a0",
-          "#feafc5",
-          "#ffe8ed"
-        ]
-      },
-      "marker-won-dark": {
-        "role": "secondary",
-        "displayName": "Маркер «сделка» (тёмная тема)",
-        "canonical": "#6fd7ad",
-        "tonalRamp": [
-          "#000f08",
-          "#042d1f",
-          "#0a4e38",
-          "#0d7353",
-          "#279871",
-          "#52bc93",
-          "#79e1b7",
-          "#c3fee3"
-        ]
-      },
-      "on-ink-dark": {
-        "role": "neutral",
-        "displayName": "На чернилах (тёмная тема)",
-        "canonical": "#0e1430",
-        "tonalRamp": [
-          "#050822",
-          "#1b2340",
-          "#374060",
-          "#566082",
-          "#7681a5",
-          "#98a4c9",
-          "#bcc8ef",
-          "#e9eeff"
+          "#030e09",
+          "#1b2823",
+          "#384640",
+          "#56655f",
+          "#778780",
+          "#99a9a2",
+          "#bdcec6",
+          "#e2f3ec"
         ]
       }
     },
     "typographyMeta": {
-      "display": {
-        "displayName": "Display",
-        "purpose": "Одно крупное число на экран: шанс сделки."
-      },
-      "figure": {
-        "displayName": "Figure",
-        "purpose": "Суммы в строке дня."
+      "denomination": {
+        "displayName": "Номинал",
+        "purpose": "Главный показатель отчёта на гравюрной плашке."
       },
       "headline": {
-        "displayName": "Headline",
-        "purpose": "Заголовок дня или периода; имя в карточке сделки 28px."
+        "displayName": "Заголовок",
+        "purpose": "Заголовок экрана и имя клиента в карточке сделки."
       },
-      "lead": {
-        "displayName": "Lead",
-        "purpose": "Итоговая фраза отчёта с маркерами."
+      "figure": {
+        "displayName": "Сумма в шапке",
+        "purpose": "Суммы рядом с заголовком воронки."
+      },
+      "money": {
+        "displayName": "Сумма",
+        "purpose": "Сумма в карточке, таблице и заголовке колонки."
       },
       "title": {
-        "displayName": "Title",
-        "purpose": "Заголовки секций; колонка воронки 14.5px."
+        "displayName": "Заголовок панели",
+        "purpose": "Заголовки панелей."
       },
       "body": {
-        "displayName": "Body",
-        "purpose": "Текст заявки, ответы, таблицы."
+        "displayName": "Текст",
+        "purpose": "Текст заявки, ответы, переписка."
       },
-      "entry-name": {
-        "displayName": "Entry name",
-        "purpose": "Имя клиента в записи воронки, чернилами."
+      "card-title": {
+        "displayName": "Имя на карточке",
+        "purpose": "Имя клиента на карточке, заголовок колонки."
       },
       "small": {
-        "displayName": "Small",
-        "purpose": "Сумма в записи, факты, история."
+        "displayName": "Мелкий текст",
+        "purpose": "Описание сделки, поля, история."
       },
       "label": {
-        "displayName": "Label",
-        "purpose": "Карандашная строка, подписи таблиц, атрибуция ИИ."
+        "displayName": "Подпись",
+        "purpose": "Подписи показателей и таблиц, пометки."
+      },
+      "serial": {
+        "displayName": "Серийный номер",
+        "purpose": "Номер сделки над именем клиента."
       }
     },
     "shadows": [
       {
-        "name": "floating-layer",
-        "value": "0 3px 8px -2px rgba(24, 28, 45, .16)",
-        "purpose": "Ответ «Спросить CRM»."
-      },
-      {
-        "name": "floating-menu",
-        "value": "0 3px 8px -2px rgba(24, 28, 45, .18)",
-        "purpose": "Меню смены стадии."
-      },
-      {
-        "name": "focus-ring",
-        "value": "0 0 0 3px color-mix(in srgb, var(--ink) 18%, transparent)",
-        "purpose": "Поле ввода в фокусе."
+        "name": "answer-popover",
+        "value": "0 24px 60px -24px rgba(16, 34, 28, .55)",
+        "purpose": "Всплывающий ответ «Спросить CRM»."
       }
     ],
     "motion": [
       {
-        "name": "ease-out",
-        "value": "cubic-bezier(.23, 1, .32, 1)",
-        "purpose": "Все входы и нажатия."
-      },
-      {
-        "name": "marker-draw",
-        "value": "500ms ease-out, stagger 60ms, delay 120ms",
-        "purpose": "Маркеры прорисовываются слева направо один раз при загрузке."
+        "name": "ease",
+        "value": "cubic-bezier(.2, .8, .2, 1)",
+        "purpose": "Все переходы цвета, рамок и всплывающего ответа."
       },
       {
         "name": "popover-in",
-        "value": "180ms ease-out, scale .97 to 1",
-        "purpose": "Ответ CRM из левого верхнего угла."
-      },
-      {
-        "name": "menu-in",
-        "value": "160ms ease-out, scale .96 to 1",
-        "purpose": "Меню стадии из правого нижнего угла."
+        "value": "200ms opacity + 250ms translateY(-6px → 0)",
+        "purpose": "Ответ CRM под полем поиска."
       },
       {
         "name": "press",
-        "value": "140ms ease-out, scale .97",
+        "value": "120ms, scale .98",
         "purpose": "Нажатие кнопки."
       }
     ],
     "breakpoints": [
       {
+        "name": "tablet",
+        "value": "1100px"
+      },
+      {
         "name": "compact",
-        "value": "900px"
+        "value": "760px"
       }
     ]
   },
   "components": [
     {
-      "name": "Primary Button",
+      "name": "Solid Button",
       "kind": "button",
-      "refersTo": "button-primary",
-      "description": "Одно главное действие экрана рядом с заголовком.",
-      "html": "<a class=\"ds-btn-primary\" href=\"#\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 5l0 14\"/><path d=\"M5 12l14 0\"/></svg>Новая заявка</a>",
-      "css": ".ds-btn-primary { font-family: var(--font, Golos, system-ui, sans-serif); display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px; border-radius: 4px; border: 1px solid var(--ink, #2b4cc8); background: var(--ink, #2b4cc8); color: var(--on-ink, #fff); font-size: 14.5px; font-weight: 550; text-decoration: none; transition: transform .14s cubic-bezier(.23,1,.32,1), background-color .15s ease; } .ds-btn-primary:hover { background: var(--ink-hover, #2140b0); border-color: var(--ink-hover, #2140b0); } .ds-btn-primary:focus-visible { outline: 2px solid var(--ink, #2b4cc8); outline-offset: 2px; } .ds-btn-primary:active { transform: scale(.97); }"
+      "refersTo": "button-solid",
+      "description": "Главное действие экрана, гравюрная зелень.",
+      "html": "<a class=\"ds-btn ds-solid\" href=\"#\">+ Новая заявка</a>",
+      "css": ".ds-btn { font-family: var(--sans, Onest, system-ui, sans-serif); display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; border-radius: 20px; border: 1px solid var(--rule-strong, #9fb0a6); background: var(--sheet, #fafbf8); color: var(--ink, #18241f); text-decoration: none; font-size: 14.5px; font-weight: 500; cursor: pointer; transition: border-color .2s cubic-bezier(.2,.8,.2,1), transform .12s cubic-bezier(.2,.8,.2,1); } .ds-btn:active { transform: scale(.98); } .ds-btn:focus-visible { outline: 2px solid var(--engrave, #22574a); outline-offset: 2px; } .ds-solid { background: var(--engrave, #22574a); border-color: var(--engrave, #22574a); color: var(--engrave-ink, #f4f8f5); }"
     },
     {
-      "name": "Secondary Button",
+      "name": "AI Button",
       "kind": "button",
-      "refersTo": "button-secondary",
-      "description": "Второстепенное действие в секции.",
-      "html": "<button class=\"ds-btn-secondary\" type=\"button\">Другой шаг</button>",
-      "css": ".ds-btn-secondary { font-family: var(--font, Golos, system-ui, sans-serif); display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px; border-radius: 4px; border: 1px solid var(--rule-strong, #c6ccd7); background: var(--sheet, #fefefd); color: var(--text, #20232b); font-size: 14.5px; font-weight: 550; cursor: pointer; transition: transform .14s cubic-bezier(.23,1,.32,1), border-color .15s ease; } .ds-btn-secondary:hover { border-color: var(--text-2, #464b58); } .ds-btn-secondary:focus-visible { outline: 2px solid var(--ink, #2b4cc8); outline-offset: 2px; } .ds-btn-secondary:active { transform: scale(.97); }"
+      "refersTo": "button-ai",
+      "description": "Действие с результатом ИИ, фиолетовая нить.",
+      "html": "<button class=\"ds-btn-ai\" type=\"button\">Отправить в Telegram</button>",
+      "css": ".ds-btn-ai { font-family: var(--sans, Onest, system-ui, sans-serif); display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 20px; border: 1px solid var(--violet, #5d46a8); background: var(--violet, #5d46a8); color: #fff; font-size: 14.5px; font-weight: 500; cursor: pointer; transition: transform .12s cubic-bezier(.2,.8,.2,1); } .ds-btn-ai:active { transform: scale(.98); } .ds-btn-ai:focus-visible { outline: 2px solid var(--engrave, #22574a); outline-offset: 2px; }"
     },
     {
-      "name": "Ask Bar",
-      "kind": "input",
-      "refersTo": "ask-bar",
-      "description": "«Спросить CRM» во всю ширину рабочего поля.",
-      "html": "<label class=\"ds-ask\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0\"/><path d=\"M21 21l-6 -6\"/></svg><input type=\"search\" placeholder=\"Спросите о заявках, деньгах или менеджерах\"></label>",
-      "css": ".ds-ask { position: relative; display: block; width: 100%; color: var(--pencil, #656b7a); } .ds-ask svg { position: absolute; left: 13px; top: 13px; pointer-events: none; } .ds-ask input { font-family: var(--font, Golos, system-ui, sans-serif); width: 100%; height: 44px; padding: 0 14px 0 42px; border: 1px solid var(--rule-strong, #c6ccd7); border-radius: 4px; background: var(--sheet, #fefefd); color: var(--text, #20232b); font-size: 15px; transition: border-color .15s ease, box-shadow .15s ease; } .ds-ask input::placeholder { color: var(--pencil, #656b7a); } .ds-ask input:focus { outline: none; border-color: var(--ink, #2b4cc8); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ink, #2b4cc8) 18%, transparent); }"
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Второстепенное действие.",
+      "html": "<button class=\"ds-btn-o\" type=\"button\">Выгрузить в Excel</button>",
+      "css": ".ds-btn-o { font-family: var(--sans, Onest, system-ui, sans-serif); display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 20px; border: 1px solid var(--rule-strong, #9fb0a6); background: var(--sheet, #fafbf8); color: var(--ink, #18241f); font-size: 14.5px; font-weight: 500; cursor: pointer; transition: border-color .2s cubic-bezier(.2,.8,.2,1), transform .12s cubic-bezier(.2,.8,.2,1); } .ds-btn-o:hover { border-color: var(--engrave, #22574a); } .ds-btn-o:active { transform: scale(.98); }"
     },
     {
       "name": "Filter Chip",
       "kind": "chip",
-      "refersTo": "filter-chip",
-      "description": "Фильтр «чьи сделки» над воронкой.",
-      "html": "<div class=\"ds-chips\"><button class=\"ds-chip\" aria-pressed=\"true\">Все</button><button class=\"ds-chip\" aria-pressed=\"false\">Ирина Соколова</button></div>",
-      "css": ".ds-chips { display: flex; gap: 6px; } .ds-chip { font-family: var(--font, Golos, system-ui, sans-serif); height: 34px; padding: 0 12px; border-radius: 4px; border: 1px solid var(--rule, #e3e6ec); background: var(--sheet, #fefefd); color: var(--text-2, #464b58); font-size: 13.5px; cursor: pointer; } .ds-chip[aria-pressed=\"true\"] { border-color: var(--ink, #2b4cc8); background: var(--ink-soft, #e9edfb); color: var(--ink, #2b4cc8); font-weight: 600; } .ds-chip:focus-visible { outline: 2px solid var(--ink, #2b4cc8); outline-offset: 2px; }"
+      "refersTo": "chip",
+      "description": "Фильтры над воронкой.",
+      "html": "<div class=\"ds-chips\"><button class=\"ds-chip\" aria-pressed=\"true\">Все</button><button class=\"ds-chip\" aria-pressed=\"false\">Ирина</button></div>",
+      "css": ".ds-chips { display: flex; gap: 6px; } .ds-chip { font-family: var(--sans, Onest, system-ui, sans-serif); padding: 6px 13px; border-radius: 16px; font-size: 13.5px; border: 1px solid var(--rule, #cfd8d1); background: transparent; color: var(--ink-2, #3d4c46); cursor: pointer; } .ds-chip[aria-pressed=\"true\"] { background: var(--ink, #18241f); border-color: var(--ink, #18241f); color: var(--sheet, #fafbf8); }"
     },
     {
-      "name": "Stage Control",
-      "kind": "custom",
-      "refersTo": "stage-segment-active",
-      "description": "Сегментный переключатель стадии сделки.",
-      "html": "<div class=\"ds-stage\" role=\"group\" aria-label=\"Стадия\"><button aria-pressed=\"false\">Новые</button><button aria-pressed=\"true\">В работе</button><button aria-pressed=\"false\">Сделка</button></div>",
-      "css": ".ds-stage { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--rule-strong, #c6ccd7); border-radius: 6px; background: var(--sheet, #fefefd); } .ds-stage button { font-family: var(--font, Golos, system-ui, sans-serif); min-height: 40px; padding: 0 16px; border: 0; border-radius: 4px; background: transparent; color: var(--text-2, #464b58); font-size: 14px; cursor: pointer; } .ds-stage button[aria-pressed=\"true\"] { background: var(--ink, #2b4cc8); color: var(--on-ink, #fff); font-weight: 600; } .ds-stage button[aria-pressed=\"false\"]:hover { background: var(--ground, #f3f4f7); color: var(--text, #20232b); }"
-    },
-    {
-      "name": "Nav Item",
+      "name": "Top Bar",
       "kind": "nav",
-      "refersTo": "nav-item-active",
-      "description": "Пункт боковой навигации на сером столе.",
-      "html": "<nav class=\"ds-nav\"><a href=\"#\" aria-current=\"page\">Воронка</a><a href=\"#\">Отчёт</a></nav>",
-      "css": ".ds-nav { display: grid; gap: 2px; width: 204px; padding: 8px; background: var(--ground, #f3f4f7); } .ds-nav a { font-family: var(--font, Golos, system-ui, sans-serif); display: flex; padding: 9px 10px; border-radius: 4px; color: var(--text-2, #464b58); font-size: 14.5px; text-decoration: none; } .ds-nav a:hover { background: var(--rule, #e3e6ec); color: var(--text, #20232b); } .ds-nav a[aria-current=\"page\"] { background: var(--ink-soft, #e9edfb); color: var(--ink, #2b4cc8); font-weight: 600; }"
+      "refersTo": "top-bar",
+      "description": "Верхняя панель на гравюре с поиском-пилюлей.",
+      "html": "<header class=\"ds-top\"><b>AI-CRM</b><nav><a href=\"#\" aria-current=\"page\">Воронка</a><a href=\"#\">Отчёт</a></nav><label class=\"ds-ask\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\"><circle cx=\"7\" cy=\"7\" r=\"5\"/><path d=\"m11 11 3.5 3.5\"/></svg><input type=\"search\" placeholder=\"Спросите CRM\"></label></header>",
+      "css": ".ds-top { font-family: var(--sans, Onest, system-ui, sans-serif); display: flex; align-items: center; gap: 20px; height: 60px; padding: 0 20px; background: var(--engrave, #22574a); color: var(--engrave-ink, #f4f8f5); } .ds-top nav { display: flex; gap: 2px; } .ds-top nav a { padding: 7px 12px; border-radius: 5px; font-size: 14.5px; color: inherit; text-decoration: none; opacity: .78; } .ds-top nav a:hover { opacity: 1; } .ds-top nav a[aria-current=\"page\"] { opacity: 1; background: rgba(255,255,255,.14); font-weight: 550; } .ds-ask { margin-left: auto; position: relative; width: 260px; } .ds-ask svg { position: absolute; left: 14px; top: 11px; opacity: .8; } .ds-ask input { width: 100%; height: 38px; border-radius: 19px; border: 1px solid rgba(255,255,255,.28); background: rgba(255,255,255,.1); color: inherit; padding: 0 16px 0 40px; font-size: 14px; } .ds-ask input::placeholder { color: inherit; opacity: .7; } .ds-ask input:focus { outline: none; background: var(--sheet, #fafbf8); color: var(--ink, #18241f); }"
     },
     {
-      "name": "Marker",
-      "kind": "custom",
-      "refersTo": "marker-today",
-      "description": "Три маркера с закреплённым смыслом; прорисовка один раз при загрузке.",
-      "html": "<p class=\"ds-mk-row\"><span class=\"ds-mk\">ответить сегодня</span> <span class=\"ds-mk late\">просрочено</span> <span class=\"ds-mk won\">сделка</span></p>",
-      "css": ".ds-mk-row { font-family: var(--font, Golos, system-ui, sans-serif); font-size: 15px; } .ds-mk { --mk: var(--mk-today, #ffe94d); color: var(--mk-text, #1d1f26); padding: 0 3px; margin: 0 -3px; border-radius: 3px 7px 4px 6px; background: linear-gradient(100deg, transparent 0, var(--mk) 4px, var(--mk) calc(100% - 3px), transparent 100%) no-repeat 0 72% / 100% 78%; box-decoration-break: clone; -webkit-box-decoration-break: clone; } .ds-mk.late { --mk: var(--mk-late, #ffb3c7); } .ds-mk.won { --mk: var(--mk-won, #8be6c2); } .ds-mk-row .ds-mk { animation: ds-mark .5s cubic-bezier(.23,1,.32,1) both; } .ds-mk-row .late { animation-delay: 60ms; } .ds-mk-row .won { animation-delay: 120ms; } @keyframes ds-mark { from { background-size: 0 78%; } } @media (prefers-reduced-motion: reduce) { .ds-mk-row .ds-mk { animation: none; } }"
+      "name": "Deal Card",
+      "kind": "card",
+      "refersTo": "deal-card",
+      "description": "Карточка сделки с серийным номером, суммой антиквой и розеткой шанса.",
+      "html": "<a class=\"ds-deal\" href=\"#\"><span class=\"serial\">№ 0013</span><h3>Максим Орлов</h3><p>Учёт заявок с трёх сайтов</p><div class=\"chance\"><svg width=\"34\" height=\"34\" viewBox=\"-50 -50 100 100\" fill=\"none\" stroke=\"currentColor\" stroke-width=\".8\"><circle r=\"44\" stroke-dasharray=\"223 276\" stroke-width=\"3\" transform=\"rotate(-90)\"/><path d=\"M36 0C30 18 8 30-10 34S-36 18-36 0-26-30-10-34 30-18 36 0Z\"/><path d=\"M0 36C-18 30-30 8-34-10S-18-36 0-36 30-26 34-10 18 30 0 36Z\"/></svg><b>81%</b><span>созвон назначен</span></div><div class=\"foot\"><span class=\"money\">110&nbsp;000&nbsp;₽</span><i>ИС</i></div></a>",
+      "css": ".ds-deal { font-family: var(--sans, Onest, system-ui, sans-serif); display: block; width: 240px; text-decoration: none; color: var(--ink, #18241f); background: var(--sheet, #fafbf8); border: 1px solid var(--rule, #cfd8d1); border-radius: 6px; padding: 12px 13px; transition: border-color .2s cubic-bezier(.2,.8,.2,1); } .ds-deal:hover { border-color: var(--rule-strong, #9fb0a6); } .ds-deal .serial { font-size: 11.5px; color: var(--engrave, #22574a); letter-spacing: .04em; font-variant-numeric: tabular-nums; } .ds-deal h3 { font-size: 14.5px; font-weight: 600; margin: 2px 0 0; } .ds-deal p { font-size: 13px; color: var(--ink-2, #3d4c46); margin: 3px 0 0; } .ds-deal .chance { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--rule, #cfd8d1); color: var(--violet, #5d46a8); } .ds-deal .chance b { font-size: 13.5px; font-weight: 650; } .ds-deal .chance span { font-size: 12.5px; color: var(--ink-3, #66756f); } .ds-deal .foot { display: flex; align-items: center; margin-top: 11px; } .ds-deal .money { font-family: var(--money, \"Old Standard\", \"Times New Roman\", serif); font-variant-numeric: lining-nums tabular-nums; font-size: 17px; } .ds-deal i { margin-left: auto; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 10.5px; font-weight: 650; background: var(--engrave-soft, #dbe8e2); color: var(--engrave, #22574a); }"
     },
     {
-      "name": "Board Entry",
+      "name": "Column Head",
       "kind": "custom",
-      "refersTo": "marker-late",
-      "description": "Запись воронки в две строки; у просрочки красная линия полей 1px.",
-      "html": "<ol class=\"ds-entries\"><li class=\"ds-entry late\"><div class=\"l1\"><a href=\"#\"><span class=\"ds-mk late\">Руслан Ахмедов</span></a><b>42&nbsp;000&nbsp;₽</b></div><div class=\"l2\"><span class=\"say late\">Просрочено на 2 часа</span><i>ИС</i><button aria-label=\"Сменить стадию\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0\"/><path d=\"M11 19a1 1 0 1 0 2 0a1 1 0 1 0 -2 0\"/><path d=\"M11 5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0\"/></svg></button></div></li><li class=\"ds-entry\"><div class=\"l1\"><a href=\"#\">Виктория Ли</a><b>95&nbsp;000&nbsp;₽</b></div><div class=\"l2\"><span class=\"say\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M16 18a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2zm0 -12a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2zm-7 12a6 6 0 0 1 6 -6a6 6 0 0 1 -6 -6a6 6 0 0 1 -6 6a6 6 0 0 1 6 6z\"/></svg>Шанс 72%, на связи</span><i>ИС</i><button aria-label=\"Сменить стадию\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0\"/><path d=\"M11 19a1 1 0 1 0 2 0a1 1 0 1 0 -2 0\"/><path d=\"M11 5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0\"/></svg></button></div></li></ol>",
-      "css": ".ds-entries { font-family: var(--font, Golos, system-ui, sans-serif); list-style: none; width: 210px; margin: 0; padding: 0 12px; background: var(--sheet, #fefefd); } .ds-entry { position: relative; padding: 9px 0 6px; border-bottom: 1px solid var(--rule, #e3e6ec); } .ds-entry.late::before { content: \"\"; position: absolute; left: -7px; top: 10px; bottom: 10px; width: 1px; background: var(--red, #c9322a); } .ds-entry .l1 { display: flex; align-items: baseline; gap: 8px; } .ds-entry a { font-size: 14.5px; font-weight: 600; color: var(--ink, #2b4cc8); text-decoration: none; } .ds-entry b { margin-left: auto; font-size: 13.5px; font-weight: 600; color: var(--text, #20232b); white-space: nowrap; } .ds-entry .l2 { display: flex; align-items: center; gap: 8px; min-height: 30px; } .ds-entry .say { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; color: var(--pencil, #656b7a); } .ds-entry .say svg { margin-right: 4px; vertical-align: -2px; } .ds-entry .say.late { color: var(--red, #c9322a); font-weight: 550; } .ds-entry i { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 11px; font-weight: 650; background: var(--ink-soft, #e9edfb); color: var(--ink, #2b4cc8); } .ds-entry button { width: 32px; height: 32px; margin-right: -6px; border: 0; border-radius: 4px; background: transparent; color: var(--pencil, #656b7a); display: grid; place-items: center; cursor: pointer; } .ds-entry button:hover { background: var(--ground, #f3f4f7); color: var(--text, #20232b); } .ds-mk { --mk: var(--mk-today, #ffe94d); color: var(--mk-text, #1d1f26); padding: 0 3px; margin: 0 -3px; border-radius: 3px 7px 4px 6px; background: linear-gradient(100deg, transparent 0, var(--mk) 4px, var(--mk) calc(100% - 3px), transparent 100%) no-repeat 0 72% / 100% 78%; box-decoration-break: clone; -webkit-box-decoration-break: clone; } .ds-mk.late { --mk: var(--mk-late, #ffb3c7); } .ds-mk.won { --mk: var(--mk-won, #8be6c2); }"
+      "refersTo": "deal-card",
+      "description": "Заголовок колонки воронки с двойной линией.",
+      "html": "<div class=\"ds-colhead\"><h2>В работе</h2><span class=\"n\">6</span><span class=\"sum\">404&nbsp;000&nbsp;₽</span></div>",
+      "css": ".ds-colhead { font-family: var(--sans, Onest, system-ui, sans-serif); display: flex; align-items: baseline; gap: 8px; width: 240px; padding: 14px 2px 12px; border-bottom: 3px double var(--rule-strong, #9fb0a6); } .ds-colhead h2 { font-size: 14.5px; font-weight: 600; margin: 0; } .ds-colhead .n { font-size: 13px; color: var(--ink-3, #66756f); } .ds-colhead .sum { margin-left: auto; font-family: var(--money, \"Old Standard\", \"Times New Roman\", serif); font-variant-numeric: lining-nums tabular-nums; font-size: 16px; }"
+    },
+    {
+      "name": "Tags",
+      "kind": "chip",
+      "refersTo": "tag",
+      "description": "Метки темы, срочности и источника.",
+      "html": "<p class=\"ds-tags\"><span class=\"t\">учёт заявок</span><span class=\"t high\">высокая</span><span class=\"t src\">Тильда</span></p>",
+      "css": ".ds-tags { font-family: var(--sans, Onest, system-ui, sans-serif); display: flex; gap: 8px; } .ds-tags .t { font-size: 12.5px; padding: 3px 10px; border-radius: 12px; background: var(--engrave-soft, #dbe8e2); color: var(--engrave, #22574a); } .ds-tags .high { background: var(--carmine-soft, #f8e4e8); color: var(--carmine, #b4283f); } .ds-tags .src { background: transparent; border: 1px solid var(--rule, #cfd8d1); color: var(--ink-3, #66756f); }"
     }
   ],
   "narrative": {
-    "northStar": "Журнал записи администратора",
-    "overview": "CRM выглядит как журнал, который администратор ведёт за стойкой: белый лист, тонкие линейки, шариковая ручка для того, что записал человек, карандаш для пометок на полях и три маркера, которыми отмечено важное на сегодня. Владелец открывает экран и за секунду видит маркерные строки: кому ответить сегодня, что просрочено, какая сделка закрылась. Всё остальное спокойное и плотное, как страница журнала.\n\nИИ в этом мире подписывает карандашом. Шанс сделки, причины, атрибуция ответа CRM написаны серым карандашным цветом с пометкой «ИИ», а синие чернила остаются за человеком: имена клиентов, суммы в полях, ссылки, главное действие. Готовый черновик сообщения набран графитом и становится чернильным, как только менеджер его правит.\n\nМир даёт интерфейсу только шрифт, палитру, плотность и один жест (маркер). Управляющие элементы стандартные: поля, кнопки, сегментный переключатель, меню. Никакой бумажной текстуры, рукописных шрифтов и таблиц, стилизованных под разлинованную бумагу.",
+    "northStar": "Банкнота",
+    "overview": "CRM устроена как денежный знак: гравюрная зелень, тонкие линии, серийные номера на каждой сделке и суммы, напечатанные антиквой, как номинал. Деньги в этой системе главные, поэтому у них свой шрифт, а всё остальное набрано спокойным гротеском и не спорит с цифрами.\n\nИИ здесь подписан фиолетовым, как защитная нить в купюре: шанс сделки, следующий шаг, ответы «Спроси CRM», строки истории, которые записал ассистент. Человек и фирма говорят гравюрной зеленью, машина фиолетовым, и это видно с первого взгляда. Шанс сделки рисуется гильош-розеткой: чем выше шанс, тем плотнее узор.\n\nПлотность рабочая: доска на пять стадий, карточки сделок на светлом листе поверх бумажного фона, отчёт с полосой показателей, где главный показатель напечатан на гравюрной плашке.",
     "keyCharacteristics": [
-      "Белый лист как рабочее поле, серый стол только под боковой навигацией",
-      "Структура из линеек толщиной 1px, без карточек и теней",
-      "Чернила для человека, карандаш для ИИ",
-      "Три маркера с фиксированным смыслом и подписью в легенде",
-      "Красный только для просроченного",
-      "Плотные записи в две строки, пять стадий воронки видны на 1366px"
+      "Гравюрная зелень как голос фирмы: верхняя панель, главная кнопка, выбранная стадия, главный показатель отчёта",
+      "Фиолетовый только для ИИ",
+      "Все суммы антиквой Old Standard с моноширинными цифрами",
+      "Серийный номер на каждой сделке",
+      "Гильош-розетка для шанса сделки",
+      "Двойная линия под заголовками колонок воронки"
     ],
     "rules": [
       {
-        "name": "The Ink Is Human Rule",
-        "body": "Синие чернила только для того, что ввёл или делает человек. Пометки ИИ карандашом с иконкой искр и подписью «ИИ»; черновик ИИ графитом, в чернила он переходит только после правки человеком.",
+        "name": "The Violet Is The Machine Rule",
+        "body": "Фиолетовый появляется только там, где работал ИИ. Кнопка, ссылка или метка, которые сделал человек, фиолетовыми не бывают.",
         "section": "colors"
       },
       {
-        "name": "The Three Markers Rule",
-        "body": "Маркеров ровно три, и смысл каждого закреплён: жёлтый «ответить сегодня», розовый «просрочено», мятный «сделка». Каждый маркер объяснён легендой с текстом; четвёртого цвета и маркера ради украшения нет.",
+        "name": "The Engraving Is The Firm Rule",
+        "body": "Гравюрная зелень — голос самой CRM: навигация, главное действие, выбранное состояние. Для статусов сделок она не используется.",
         "section": "colors"
       },
       {
-        "name": "The Margin Line Rule",
-        "body": "Красный появляется только у просрочки: красная строка пометки и линия полей шириной 1px, отступленная от краёв записи. Никаких красных заливок и полос шире 1px.",
+        "name": "The Three Meanings Rule",
+        "body": "Кармин — только просрочка и срочность, золото — только выигрыш. Третьего значения у этих цветов нет.",
         "section": "colors"
       },
       {
-        "name": "The Heading Is The Fact Rule",
-        "body": "Заголовок экрана и есть содержание: дата («Вторник, 7 октября») или период («Отчёт с 8 сентября по 7 октября»). Над заголовками нет надзаголовков и меток разделов; название раздела живёт в навигации.",
+        "name": "The Money Is Printed Rule",
+        "body": "Любая сумма набрана Old Standard с моноширинными цифрами. Интерфейсный текст антиквой не набирается никогда.",
         "section": "typography"
-      },
-      {
-        "name": "The Ruled Sheet Rule",
-        "body": "Структуру задают линейки 1px на белом листе. Рамки только у элементов управления (поля, кнопки, переключатель стадий) и у всплывающих слоёв; колонки и секции рамок и теней не имеют.",
-        "section": "elevation"
       }
     ],
     "dos": [
-      "**Do** писать суммы с неразрывным пробелом и знаком ₽ через неразрывный пробел (110 000 ₽), цифры моноширинные.",
-      "**Do** держать пять стадий воронки видимыми на 1366px: колонки `minmax(180px, 1fr)`, записи в две строки.",
-      "**Do** давать каждому маркеру текстовую подпись в легенде или в карандашной строке; цвет не единственный носитель смысла.",
-      "**Do** брать иконки только из Tabler, обводка 1.75, размер 18px (14–15px в строках записи).",
-      "**Do** делать элементы управления не ниже 44px, кроме кнопки стадии в записи (32px).",
-      "**Do** включать эффекты наведения только под `(hover: hover) and (pointer: fine)`.",
-      "**Do** подписывать любой вывод ИИ карандашом и иконкой искр: «подсказка ИИ», «оценка ИИ», «посчитано по меткам UTM»."
+      "**Do** набирать каждую сумму антиквой Old Standard с моноширинными цифрами и неразрывным пробелом (110 000 ₽).",
+      "**Do** подписывать фиолетовым всё, что сделал ИИ, и только это.",
+      "**Do** ставить серийный номер на каждую сделку.",
+      "**Do** показывать шанс сделки гильош-розеткой вместе с числом и причиной, а не одним цветом.",
+      "**Do** делать нажимаемое и фильтрующее пилюлями, а контейнеры — прямоугольниками 6–10px."
     ],
     "donts": [
-      "**Don't** класть колонки, секции и записи в карточки с тенью или рамкой.",
-      "**Don't** ставить цветные полосы статуса шире 1px у края записи; единственная вертикальная линия в системе это красная линия полей у просрочки.",
-      "**Don't** ставить надзаголовок или метку раздела над заголовком экрана.",
-      "**Don't** использовать в тексте интерфейса длинное и среднее тире; диапазоны писать словами («с 8 сентября по 7 октября»).",
-      "**Don't** вводить четвёртый цвет маркера или маркер ради украшения.",
-      "**Don't** писать вывод ИИ чернилами или прятать, что его написал ИИ.",
-      "**Don't** повторять анимацию маркера при наведении или прокрутке; она бывает один раз при загрузке.",
-      "**Don't** имитировать бумагу: без текстур, рукописных шрифтов и таблиц в линейку."
+      "**Don't** набирать интерфейсный текст, кнопки и подписи антиквой.",
+      "**Don't** красить фиолетовым действия человека.",
+      "**Don't** использовать кармин и золото для чего-то, кроме просрочки и выигрыша.",
+      "**Don't** вешать тени на карточки и панели; тень только у всплывающего ответа.",
+      "**Don't** добавлять цветные полосы статуса по краю карточки."
     ]
   }
 }
