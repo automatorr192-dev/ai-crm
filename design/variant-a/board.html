@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Воронка — AI-CRM</title>
+<link rel="preload" href="fonts/onest-400-700-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <a class="mark" href="board.html">
+      <svg viewBox="-52 -52 104 104" data-chance="0.9"></svg>
+      AI-CRM
+    </a>
+    <nav class="nav" aria-label="Разделы">
+      <a href="board.html" aria-current="page">Воронка</a>
+      <a href="#">Заявки</a>
+      <a href="#">Клиенты</a>
+      <a href="report.html">Отчёт</a>
+      <a href="#">Команда</a>
+    </nav>
+    <div class="ask">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="5"/><path d="m11 11 3.5 3.5"/></svg>
+      <input type="search" aria-label="Спросить CRM" placeholder="Спросите: сколько принёс ВКонтакте?">
+      <div class="answer" role="status">
+        <p class="q">Сколько принесла реклама ВКонтакте за 30 дней?</p>
+        <p class="a">3 заявки, сделок пока нет. Одна в работе на
+          <span class="money">52 000 ₽</span>, одна в новых, одна ушла в отказ.</p>
+        <p class="how">Посчитано по меткам utm_source=vk за 30 дней. Откройте список, чтобы проверить.</p>
+      </div>
+    </div>
+    <div class="me"><i>АК</i><span>Анна Котова</span></div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="head">
+    <h1>Воронка</h1>
+    <div class="figures">
+      <div class="figure"><span>В работе сейчас</span><b class="money">404 000 ₽</b></div>
+      <div class="figure"><span>Выиграно за месяц</span><b class="money">358 000 ₽</b></div>
+      <div class="figure"><span>Дошли до сделки</span><b class="money">23%</b></div>
+    </div>
+    <div class="actions">
+      <a class="btn" href="#">Выгрузить в Excel</a>
+      <a class="btn solid" href="#">Новая заявка</a>
+    </div>
+  </div>
+
+  <p class="alarm"><b>Две сделки просрочены</b> Кофейня «Зерно» молчит шесть дней, Артёму Захарову обещали перезвонить вчера <a href="#">Показать</a></p>
+
+  <div class="filters" aria-label="Чьи сделки">
+    <button class="chip" aria-pressed="true">Все</button>
+    <button class="chip" aria-pressed="false">Ирина Соколова</button>
+    <button class="chip" aria-pressed="false">Олег Миронов</button>
+    <button class="chip" aria-pressed="false">Без ответственного</button>
+  </div>
+
+  <div class="board">
+    <section class="col" aria-label="Новые">
+      <div class="col-head"><h2>Новые</h2><span class="n">5</span></div>
+      <div class="cards">
+        <a class="deal" href="deal.html">
+          <div class="serial">№ 0022</div>
+          <h3>Светлана Ким</h3>
+          <p>Заявки с лендингов онлайн-школы сразу менеджеру в телеграм</p>
+          <div class="foot"><span class="tag high">срочно</span><span class="who" title="Не назначен">—</span></div>
+          <p class="waiting-ai">Шанс оценю после первого ответа клиента</p>
+        </a>
+        <a class="deal" href="deal.html">
+          <div class="serial">№ 0021</div>
+          <h3>Павел Егоров</h3>
+          <p>Детейлинг-центр: запись с сайта и звонков, календарь</p>
+          <div class="foot"><span class="tag">запись</span><span class="who" title="Не назначен">—</span></div>
+        </a>
+        <a class="deal" href="deal.html">
+          <div class="serial">№ 0019</div>
+          <h3>Кирилл Новиков</h3>
+          <p>Оптовые заявки интернет-магазина теряются в почте</p>
+          <div class="foot"><span class="tag high">срочно</span><span class="who" title="Не назначен">—</span></div>
+        </a>
+        <a class="deal" href="deal.html">
+          <div class="serial">№ 0018</div>
+          <h3>Студия йоги «Прана»</h3>
+          <p>Дожимать тех, кто не пришёл на пробное</p>
+          <div class="foot"><span class="tag">дожим</span><span class="who" title="Олег Миронов">ОМ</span></div>
+        </a>
+        <a class="deal" href="deal.html">
+          <div class="serial">№ 0017</div>
+          <h3>Наталья Белова</h3>
+          <p>Бухгалтерия: приём документов от клиентов в одном месте</p>
+          <div class="foot"><span class="tag">документы</span><span class="who" title="Не назначен">—</span></div>
+        </a>
+      </div>
+    </section>
+
+    <section class="col" aria-label="В работе">
+      <div class="col-head"><h2>В работе</h2><span class="n">6</span><span class="sum">404 000 ₽</span></div>
+      <div class="cards">
+        <a class="deal" href="deal.html">
+          <div class="serial">№ 0013</div>
+          <h3>Максим Орлов</h3>
+          <p>Учёт заявок с трёх сайтов ремонта и отчёт по рекламе</p>
+          <div class="foot"><span class="money">110 000 ₽</span><span class="who" title="Ирина Соколова">ИС</span></div>
+          <p class="hot">Ассистент назначил созвон на завтра, 11:00</p>
+          <div class="chance"><svg data-chance="0.81"></svg><div><b>81%</b> <span>бюджет назван, созвон назначен</span></div></div>
+        </a>
+        <a class="deal" href="deal.html">
+          <div class="serial">№ 0008</div>
+          <h3>Виктория Ли</h3>
+          <p>Клининг, шесть бригад: заявки по районам и загрузка</p>
+          <div class="foot"><span class="money">95 000 ₽</span><span class="who" title="Ирина Соколова">ИС</span></div>
+          <div class="chance"><svg data-chance="0.72"></svg><div><b>72%</b> <span>отвечает в течение часа</span></div></div>
+        </a>
+        <a class="deal" href="deal.html">
+          <div class="serial">№ 0020</div>
+          <h3>Анастасия Романова</h3>
+          <p>Замерщик видит свои заявки с телефона</p>
+          <div class="foot"><span class="money">75 000 ₽</span><span class="who" title="Олег Миронов">ОМ</span></div>
+          <div class="chance"><svg data-chance="0.64"></svg><div><b>64%</b> <span>ждёт смету до пятницы</span></div></div>
+        </a>
+        <a class="deal" href="deal.html">
+          <div class="serial">№ 0011</div>
+          <h3>Елена Гусева</h3>
+          <p>Заказы цветов из инстаграма и сайта в одном списке</p>
+          <div class="foot"><span class="money">52 000 ₽</span><span class="who" title="Олег Миронов">ОМ</span></div>
+          <div class="chance"><svg data-chance="0.46"></svg><div><b>46%</b> <span>сравнивает с готовым сервисом</span></div></div>
+        </a>
+        <a class="deal late" href="deal.html">
+          <div class="serial">№ 0016</div>
+          <h3>Руслан Ахмедов</h3>
+          <p>Автошкола: напоминания о занятиях и оплатах</p>
+          <div class="foot"><span class="money">42 000 ₽</span><span class="who" title="Ирина Соколова">ИС</span></div>
+          <p class="late-note">Перезвонить два часа назад</p>
+          <div class="chance"><svg data-chance="0.38"></svg><div><b>38%</b> <span>обещанный звонок не состоялся</span></div></div>
+        </a>
+      </div>
+    </section>
+
+    <section class="col" aria-label="Ждём ответа">
+      <div class="col-head"><h2>Ждём ответа</h2><span class="n">3</span><span class="sum">155 000 ₽</span></div>
+      <div class="cards">
+        <a class="deal" href="deal.html">
+          <div class="serial">№ 0014</div>
+          <h3>Ольга Сидорова</h3>
+          <p>Турагентство: вся переписка менеджеров в одном месте</p>
+          <div class="foot"><span class="money">65 000 ₽</span><span class="who" title="Олег Миронов">ОМ</span></div>
+          <div class="chance"><svg data-chance="0.58"></svg><div><b>58%</b> <span>КП открыто дважды</span></div></div>
+        </a>
+        <a class="deal late" href="deal.html">
+          <div class="serial">№ 0009</div>
+          <h3>Артём Захаров</h3>
+          <p>Юрфирма: квалификация и запись на консультацию</p>
+          <div class="foot"><span class="money">55 000 ₽</span><span class="who" title="Олег Миронов">ОМ</span></div>
+          <p class="late-note">Перезвонить вчера в 15:00</p>
+          <div class="chance"><svg data-chance="0.41"></svg><div><b>41%</b> <span>срок перезвона прошёл</span></div></div>
+        </a>
+        <a class="deal late" href="deal.html">
+          <div class="serial">№ 0007</div>
+          <h3>Кофейня «Зерно»</h3>
+          <p>Отзывы гостей трёх кофеен в одном месте</p>
+          <div class="foot"><span class="money">35 000 ₽</span><span class="who" title="Ирина Соколова">ИС</span></div>
+          <p class="late-note">Молчит шесть дней</p>
+          <div class="chance"><svg data-chance="0.22"></svg><div><b>22%</b> <span>КП не открыто</span></div></div>
+        </a>
+      </div>
+    </section>
+
+    <section class="col" aria-label="Сделка">
+      <div class="col-head"><h2>Сделка</h2><span class="n">5</span><span class="sum">358 000 ₽</span></div>
+      <div class="cards">
+        <a class="deal won" href="deal.html"><div class="serial">№ 0002</div><h3>Олег Петров</h3><p>Заявки автосервиса в одном списке</p><div class="foot"><span class="money">120 000 ₽</span><span class="who" title="Олег Миронов">ОМ</span></div></a>
+        <a class="deal won" href="deal.html"><div class="serial">№ 0001</div><h3>Полина Смирнова</h3><p>Запись в салон и напоминания</p><div class="foot"><span class="money">85 000 ₽</span><span class="who" title="Ирина Соколова">ИС</span></div></a>
+        <a class="deal won" href="deal.html"><div class="serial">№ 0005</div><h3>Марина Ковалёва</h3><p>Заявки сайта в amoCRM</p><div class="foot"><span class="money">70 000 ₽</span><span class="who" title="Ирина Соколова">ИС</span></div></a>
+        <a class="deal won" href="deal.html"><div class="serial">№ 0004</div><h3>Игорь Белов</h3><p>Бот записи на пробное</p><div class="foot"><span class="money">45 000 ₽</span><span class="who" title="Олег Миронов">ОМ</span></div></a>
+      </div>
+    </section>
+
+    <section class="col" aria-label="Отказ">
+      <div class="col-head"><h2>Отказ</h2><span class="n">3</span><span class="sum">148 000 ₽</span></div>
+      <div class="cards">
+        <a class="deal lost" href="deal.html"><div class="serial">№ 0003</div><h3>Студия «Линия»</h3><p>Выбрали готовое решение</p><div class="foot"><span class="money">60 000 ₽</span><span class="who" title="Ирина Соколова">ИС</span></div></a>
+        <a class="deal lost" href="deal.html"><div class="serial">№ 0012</div><h3>Ветклиника «Айболит»</h3><p>Отложили до весны</p><div class="foot"><span class="money">48 000 ₽</span><span class="who" title="Ирина Соколова">ИС</span></div></a>
+        <a class="deal lost" href="deal.html"><div class="serial">№ 0006</div><h3>Денис Фролов</h3><p>Дорого</p><div class="foot"><span class="money">40 000 ₽</span><span class="who" title="Олег Миронов">ОМ</span></div></a>
+      </div>
+    </section>
+  </div>
+
+  <p class="demo-note">Демо-данные: клиенты и суммы выдуманы. «Спроси CRM», шанс сделки и следующий шаг показаны как концепт.</p>
+</main>
+<script src="app.js"></script>
+</body>
+</html>

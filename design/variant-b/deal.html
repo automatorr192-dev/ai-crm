@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Максим Орлов · AI-CRM</title>
+<link rel="preload" href="fonts/golos-400-700-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+<script>document.documentElement.classList.add("js")</script>
+</head>
+<body>
+<a class="skip" href="#main">К содержимому</a>
+<div class="shell">
+  <aside class="side">
+    <a class="brand" href="board.html"><b class="mk">AI</b>-CRM</a>
+    <nav aria-label="Разделы">
+      <a href="board.html" aria-current="page"><svg class="icon"><use href="icons.svg#layout-kanban"/></svg>Воронка</a>
+      <a href="#"><svg class="icon"><use href="icons.svg#list-details"/></svg>Заявки<span class="count">22</span></a>
+      <a href="#"><svg class="icon"><use href="icons.svg#address-book"/></svg>Клиенты</a>
+      <a href="report.html"><svg class="icon"><use href="icons.svg#chart-bar"/></svg>Отчёт</a>
+      <a href="#"><svg class="icon"><use href="icons.svg#users"/></svg>Команда</a>
+      <a href="#"><svg class="icon"><use href="icons.svg#history"/></svg>Журнал</a>
+    </nav>
+    <div class="me"><i>ИС</i><div>Ирина Соколова<small>менеджер</small></div></div>
+  </aside>
+
+  <main class="main" id="main">
+    <div class="bar">
+      <div class="ask">
+        <svg class="icon"><use href="icons.svg#search"/></svg>
+        <input type="search" aria-label="Спросить CRM" placeholder="Спросите, что мы обещали Максиму">
+        <div class="answer" role="status">
+          <p class="q">Что мы обещали Максиму Орлову?</p>
+          <p class="a">Прислать смету до пятницы и показать отчёт по рекламе Директа на созвоне завтра в 11:00.</p>
+          <p class="who-said"><svg class="icon"><use href="icons.svg#sparkles"/></svg>Собрано из переписки и комментариев</p>
+        </div>
+      </div>
+    </div>
+
+    <p class="crumbs"><a href="board.html">Воронка</a> / В работе</p>
+    <div class="deal-head">
+      <div>
+        <h1><span class="mk">Максим Орлов</span></h1>
+        <p class="meta"><a href="tel:+79991204567">+7 999 120-45-67</a><span>ремонт квартир под ключ</span><span>сделка № 13</span></p>
+      </div>
+      <p class="amount">Сумма сделки<b>110 000 ₽</b></p>
+    </div>
+
+    <div class="stage" data-group role="group" aria-label="Стадия">
+      <button aria-pressed="false">Новые</button>
+      <button aria-pressed="true">В работе</button>
+      <button aria-pressed="false">Ждём ответа</button>
+      <button aria-pressed="false">Сделка</button>
+      <button aria-pressed="false">Отказ</button>
+    </div>
+
+    <div class="cols">
+      <div>
+        <section class="panel next p-next" aria-labelledby="next-t">
+          <h2 id="next-t">Следующий шаг<span class="by"><svg class="icon"><use href="icons.svg#sparkles"/></svg>подсказка ИИ</span></h2>
+          <p class="reason">Созвон завтра в 11:00, а клиент собирает отчёт по рекламе вручную. Если прислать пример заранее, разговор начнётся с цифр, а не с вопросов.</p>
+          <label for="msg">Сообщение Максиму в Telegram</label>
+          <textarea id="msg" class="draft">Максим, добрый день! Завтра в 11:00 созваниваемся. Чтобы не тратить время на созвоне, прикладываю пример отчёта: в нём видно заявки и деньги по каждой кампании Директа. Если удобнее другое время, напишите.</textarea>
+          <div class="actions">
+            <button class="btn primary" type="button" data-send><svg class="icon"><use href="icons.svg#brand-telegram"/></svg>Отправить в Telegram</button>
+            <button class="btn" type="button"><svg class="icon"><use href="icons.svg#pencil"/></svg>Другой шаг</button>
+          </div>
+          <p class="done-line"><span class="mk won">Отправлено в 14:32.</span> Если Максим не ответит до завтра 10:00, напомню.</p>
+        </section>
+
+        <section class="panel p-req" aria-labelledby="req-t">
+          <h2 id="req-t">Заявка</h2>
+          <p class="said">Ремонт квартир под ключ: заявки с трёх сайтов, нужен общий учёт и отчёт по рекламе.</p>
+          <p class="facts"><span>Тема: <b>учёт заявок ремонта</b></span><span>Срочность: <b>высокая</b></span><span>Пришла: <b>Тильда, 7 октября 09:14</b></span><span>Реклама: <b>yandex, crm-uslugi</b></span></p>
+        </section>
+
+        <section class="panel p-talk" aria-labelledby="talk-t">
+          <h2 id="talk-t">Разговор с ассистентом в Telegram</h2>
+          <dl class="known">
+            <dt>Задача</dt><dd>общий учёт заявок с трёх сайтов и отчёт по рекламе</dd>
+            <dt>Бизнес</dt><dd>ремонт квартир, два менеджера</dd>
+            <dt>Бюджет</dt><dd>до 120 000 ₽</dd>
+            <dt>Созвон</dt><dd>завтра, 11:00</dd>
+          </dl>
+          <div class="talk">
+            <p class="line"><b>Ассистент</b><span>Здравствуйте, Максим! Уточню пару деталей, чтобы менеджер позвонил уже с решением. Сколько заявок в месяц приходит с трёх сайтов?</span></p>
+            <p class="line client"><b>Максим</b><span>Около 150, ещё звонки</span></p>
+            <p class="line"><b>Ассистент</b><span>Кто сейчас разбирает заявки и где ведёте учёт?</span></p>
+            <p class="line client"><b>Максим</b><span>Два менеджера, всё в гугл таблице, отчёт по рекламе собираю руками</span></p>
+            <p class="line"><b>Ассистент</b><span>Записал на завтра 11:00. Менеджер Ирина позвонит на этот номер.</span></p>
+          </div>
+        </section>
+      </div>
+
+      <aside>
+        <section class="panel p-chance" aria-labelledby="ch-t">
+          <h2 id="ch-t">Шанс сделки<span class="by"><svg class="icon"><use href="icons.svg#sparkles"/></svg>оценка ИИ</span></h2>
+          <p class="chance-big"><b>81%</b><span>самый высокий среди открытых сделок</span></p>
+          <ul class="why">
+            <li class="plus"><svg class="icon"><use href="icons.svg#check"/></svg>бюджет назван и укладывается в смету</li>
+            <li class="plus"><svg class="icon"><use href="icons.svg#check"/></svg>созвон назначил сам клиент</li>
+            <li class="minus"><svg class="icon"><use href="icons.svg#alert-triangle"/></svg>менеджеры привыкли к таблице, переход может затянуться</li>
+          </ul>
+        </section>
+
+        <section class="panel p-fields" aria-labelledby="f-t">
+          <h2 id="f-t">Сделка</h2>
+          <div class="fields">
+            <div class="field"><label for="who">Ответственный</label><select id="who"><option>Ирина Соколова</option><option>Олег Миронов</option></select></div>
+            <div class="field"><label for="sum">Сумма, ₽</label><input id="sum" inputmode="numeric" value="110 000"></div>
+            <div class="field"><label for="due">Напомнить</label><input id="due" value="8 октября, 10:30"></div>
+          </div>
+          <div class="row">
+            <a class="btn" href="#"><svg class="icon"><use href="icons.svg#file-text"/></svg>Коммерческое предложение</a>
+            <a class="btn quiet" href="#"><svg class="icon"><use href="icons.svg#paperclip"/></svg>Файл</a>
+          </div>
+        </section>
+
+        <section class="panel p-log" aria-labelledby="h-t">
+          <h2 id="h-t">История</h2>
+          <ul class="log">
+            <li><time>7 окт 09:14</time><span>Заявка с Тильды, кампания crm-uslugi</span></li>
+            <li><time>7 окт 09:14</time><span class="ai">ИИ разметил: высокая срочность</span></li>
+            <li><time>7 окт 09:26</time><span class="ai">Ассистент назначил созвон</span></li>
+            <li><time>7 окт 09:31</time><span>Анна Котова передала сделку Ирине</span></li>
+            <li><time>7 окт 11:02</time><span>Ирина поставила сумму 110 000 ₽</span></li>
+          </ul>
+        </section>
+      </aside>
+    </div>
+    <p class="empty-hint">Демо-данные. Шанс сделки и следующий шаг показаны как концепт.</p>
+  </main>
+</div>
+
+<nav class="tabbar" aria-label="Разделы">
+  <a href="board.html" aria-current="page"><svg class="icon"><use href="icons.svg#layout-kanban"/></svg>Воронка</a>
+  <a href="#"><svg class="icon"><use href="icons.svg#list-details"/></svg>Заявки</a>
+  <a href="#"><svg class="icon"><use href="icons.svg#address-book"/></svg>Клиенты</a>
+  <a href="report.html"><svg class="icon"><use href="icons.svg#chart-bar"/></svg>Отчёт</a>
+  <a href="#"><svg class="icon"><use href="icons.svg#users"/></svg>Команда</a>
+</nav>
+<script src="app.js"></script>
+</body>
+</html>

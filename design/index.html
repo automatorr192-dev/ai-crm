@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Два варианта дизайна · AI-CRM</title>
+<style>
+  :root { --bg: #f4f5f7; --card: #fff; --text: #1f2229; --muted: #5f6573; --line: #dfe2e8; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #14161b; --card: #1c1f26; --text: #e8eaef; --muted: #9aa0ad; --line: #2b2f39; } }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); padding: 32px 16px 64px; }
+  main { max-width: 980px; margin: 0 auto; }
+  h1 { font-size: 26px; letter-spacing: -.01em; }
+  .lead { color: var(--muted); margin-top: 6px; max-width: 70ch; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 24px; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 20px; }
+  h2 { font-size: 18px; }
+  p.how { color: var(--muted); margin-top: 4px; font-size: 14px; }
+  ul { list-style: none; margin-top: 14px; display: grid; gap: 6px; }
+  a { color: inherit; font-weight: 600; text-underline-offset: 3px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Два варианта дизайна AI-CRM</h1>
+  <p class="lead">Одни и те же экраны и данные, два разных процесса. Новые функции «Спроси CRM», шанс сделки и следующий шаг показаны как концепт: кликните в строку поиска на любом экране.</p>
+  <div class="grid">
+    <section>
+      <h2>Вариант 1. Банкнота</h2>
+      <p class="how">Официальный плагин Anthropic frontend-design. Деньги в работе как язык купюры: гравюрная антиква для сумм, номер сделки как серийный номер, шанс сделки нарисован гильоширной розеткой.</p>
+      <ul>
+        <li><a href="variant-a/board.html">Воронка</a></li>
+        <li><a href="variant-a/deal.html">Карточка сделки</a></li>
+        <li><a href="variant-a/report.html">Отчёт</a></li>
+      </ul>
+    </section>
+    <section>
+      <h2>Вариант 2. Журнал записи</h2>
+      <p class="how">Наши скиллы: impeccable (мир выбран тобой на странице решений), taste-skill, ui-ux-pro-max, emil-design-eng. Журнал администратора: синие чернила для того, что вписал человек, карандаш для подсказок ИИ, маркер на том, что требует ответа.</p>
+      <ul>
+        <li><a href="variant-b/board.html">Воронка</a></li>
+        <li><a href="variant-b/deal.html">Карточка сделки</a></li>
+        <li><a href="variant-b/report.html">Отчёт</a></li>
+      </ul>
+    </section>
+  </div>
+</main>
+</body>
+</html>

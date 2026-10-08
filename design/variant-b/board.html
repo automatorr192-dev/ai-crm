@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Воронка · AI-CRM</title>
+<link rel="preload" href="fonts/golos-400-700-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+<script>document.documentElement.classList.add("js")</script>
+</head>
+<body>
+<a class="skip" href="#main">К содержимому</a>
+<div class="shell">
+  <aside class="side">
+    <a class="brand" href="board.html"><b class="mk">AI</b>-CRM</a>
+    <nav aria-label="Разделы">
+      <a href="board.html" aria-current="page"><svg class="icon"><use href="icons.svg#layout-kanban"/></svg>Воронка</a>
+      <a href="#"><svg class="icon"><use href="icons.svg#list-details"/></svg>Заявки<span class="count">22</span></a>
+      <a href="#"><svg class="icon"><use href="icons.svg#address-book"/></svg>Клиенты</a>
+      <a href="report.html"><svg class="icon"><use href="icons.svg#chart-bar"/></svg>Отчёт</a>
+      <a href="#"><svg class="icon"><use href="icons.svg#users"/></svg>Команда</a>
+      <a href="#"><svg class="icon"><use href="icons.svg#history"/></svg>Журнал</a>
+    </nav>
+    <div class="me"><i>АК</i><div>Анна Котова<small>владелец</small></div></div>
+  </aside>
+
+  <main class="main" id="main">
+    <div class="bar">
+      <div class="ask">
+        <svg class="icon"><use href="icons.svg#search"/></svg>
+        <input type="search" aria-label="Спросить CRM" placeholder="Спросите о заявках, деньгах или менеджерах">
+        <div class="answer" role="status">
+          <p class="q">Сколько принесла реклама ВКонтакте за 30 дней?</p>
+          <p class="a">3 заявки, сделок пока нет. Одна в работе на 52 000 ₽, одна в новых, одна ушла в отказ.</p>
+          <table>
+            <thead><tr><th>Клиент</th><th>Стадия</th><th class="num">Сумма</th></tr></thead>
+            <tbody>
+              <tr><td>Елена Гусева</td><td>В работе</td><td class="num">52 000 ₽</td></tr>
+              <tr><td>Студия йоги «Прана»</td><td>Новые</td><td class="num">без суммы</td></tr>
+              <tr><td>Студия «Линия»</td><td>Отказ</td><td class="num">60 000 ₽</td></tr>
+            </tbody>
+          </table>
+          <p class="who-said"><svg class="icon"><use href="icons.svg#sparkles"/></svg>Посчитано по меткам utm_source=vk</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="day">
+      <h1>Вторник, 7 октября</h1>
+      <a class="btn primary" href="#" aria-label="Новая заявка"><svg class="icon"><use href="icons.svg#plus"/></svg><span>Новая заявка</span></a>
+      <div class="sums">
+        <p class="sum">В работе<b>404 000 ₽</b></p>
+        <p class="sum">Выиграно за месяц<b>358 000 ₽</b></p>
+        <p class="sum">Без ответа больше часа<b>2 заявки</b></p>
+      </div>
+    </div>
+
+    <p class="legend">
+      <span><span class="mk">ответить сегодня</span> 3</span>
+      <span><span class="mk late">просрочено</span> 3</span>
+      <span><span class="mk won">сделка сегодня</span> 1</span>
+      <a href="#">Показать только отмеченные</a>
+    </p>
+
+    <div class="who-filter" data-group aria-label="Чьи сделки">
+      <button aria-pressed="true">Все</button>
+      <button aria-pressed="false">Ирина Соколова</button>
+      <button aria-pressed="false">Олег Миронов</button>
+      <button aria-pressed="false">Без ответственного</button>
+    </div>
+
+    <div class="board">
+      <section class="col" aria-labelledby="c-new">
+        <header><h2 id="c-new">Новые</h2><span class="n">5</span></header>
+        <ol class="entries">
+<li class="entry"><div class="l1"><a class="name" href="deal.html"><span class="mk today">Светлана Ким</span></a><time class="when">09:41</time></div><div class="l2"><span class="say today">Сегодня: ждёт с утра</span><button class="move" aria-label="Сменить стадию"><svg class="icon"><use href="icons.svg#dots-vertical"/></svg></button></div></li>
+<li class="entry"><div class="l1"><a class="name" href="deal.html"><span class="mk today">Кирилл Новиков</span></a><time class="when">08:55</time></div><div class="l2"><span class="say today">Сегодня: просит срочно</span><button class="move" aria-label="Сменить стадию"><svg class="icon"><use href="icons.svg#dots-vertical"/></svg></button></div></li>
+<li class="entry"><div class="l1"><a class="name" href="deal.html">Павел Егоров</a><time class="when">вчера</time></div><div class="l2"><span class="say desc">Детейлинг: запись с сайта</span><button class="move" aria-label="Сменить стадию"><svg class="icon"><use href="icons.svg#dots-vertical"/></svg></button></div></li>
+<li class="entry"><div class="l1"><a class="name" href="deal.html">Студия йоги «Прана»</a><time class="when">5 окт</time></div><div class="l2"><span class="say desc">Дожим после пробного</span><span class="ini" title="Олег Миронов">ОМ</span><button class="move" aria-label="Сменить стадию"><svg class="icon"><use href="icons.svg#dots-vertical"/></svg></button></div></li>
+<li class="entry"><div class="l1"><a class="name" href="deal.html">Наталья Белова</a><time class="when">4 окт</time></div><div class="l2"><span class="say desc">Бухгалтерия: документы</span><button class="move" aria-label="Сменить стадию"><svg class="icon"><use href="icons.svg#dots-vertical"/></svg></button></div></li>
+        </ol>
+      </section>
+
+      <section class="col" aria-labelledby="c-work">
+        <header><h2 id="c-work">В работе</h2><span class="n">6</span><span class="total">404 000 ₽</span></header>
+        <ol class="entries">
+<li class="entry"><div class="l1"><a class="name" href="deal.html"><span class="mk today">Максим Орлов</span></a><span class="money">110 000 ₽</span></div><div class="l2"><span class="say today">Сегодня: пример отчёта</span><span class="ini" title="Ирина Соколова">ИС</span><button class="move" aria-label="Сменить стадию"><svg class="icon"><use href="icons.svg#dots-vertical"/></svg></button></div></li>
+<li class="entry"><div class="l1"><a class="name" href="deal.html">Виктория Ли</a><span class="money">95 000 ₽</span></div><div class="l2"><span class="say ai"><svg class="icon"><use href="icons.svg#sparkles"/></svg>Шанс 72%, на связи</span><span class="ini" title="Ирина Соколова">ИС</span><button class="move" aria-label="Сменить стадию"><svg class="icon"><use href="icons.svg#dots-vertical"/></svg></button></div></li>
+<li class="entry"><div class="l1"><a class="name" href="deal.html">Анастасия Романова</a><span class="money">75 000 ₽</span></div><div class="l2"><span class="say ai"><svg class="icon"><use href="icons.svg#sparkles"/></svg>Шанс 64%, ждёт смету</span><span class="ini" title="Олег Миронов">ОМ</span><button class="move" aria-label="Сменить стадию"><svg class="icon"><use href="icons.svg#dots-vertical"/></svg></button></div></li>
+<li class="entry"><div class="l1"><a class="name" href="deal.html">Елена Гусева</a><span class="money">52 000 ₽</span></div><div class="l2"><span class="say ai"><svg class="icon"><use href="icons.svg#sparkles"/></svg>Шанс 46%, сравнивает</span><span class="ini" title="Олег Миронов">ОМ</span><button class="move" aria-label="Сменить стадию"><svg class="icon"><use href="icons.svg#dots-vertical"/></svg></button></div></li>
+<li class="entry late"><div class="l1"><a class="name" href="deal.html"><span class="mk late">Руслан Ахмедов</span></a><span class="money">42 000 ₽</span></div><div class="l2"><span class="say late">Просрочено на 2 часа</span><span class="ini" title="Ирина Соколова">ИС</span><button class="move" aria-label="Сменить стадию"><svg class="icon"><use href="icons.svg#dots-vertical"/></svg></button></div></li>
+<li class="entry"><div class="l1"><a class="name" href="deal.html">Фотостудия «Свет»</a><span class="money">30 000 ₽</span></div><div class="l2"><span class="say ai"><svg class="icon"><use href="icons.svg#sparkles"/></svg>Шанс 34%, не отвечает</span><span class="ini" title="Олег Миронов">ОМ</span><button class="move" aria-label="Сменить стадию"><svg class="icon"><use href="icons.svg#dots-vertical"/></svg></button></div></li>
+        </ol>
+      </section>
+
+      <section class="col" aria-labelledby="c-wait">
+        <header><h2 id="c-wait">Ждём ответа</h2><span class="n">3</span><span class="total">155 000 ₽</span></header>
+        <ol class="entries">
+<li class="entry"><div class="l1"><a class="name" href="deal.html">Ольга Сидорова</a><span class="money">65 000 ₽</span></div><div class="l2"><span class="say ai"><svg class="icon"><use href="icons.svg#sparkles"/></svg>Шанс 58%, читал КП</span><span class="ini" title="Олег Миронов">ОМ</span><button class="move" aria-label="Сменить стадию"><svg class="icon"><use href="icons.svg#dots-vertical"/></svg></button></div></li>
+<li class="entry late"><div class="l1"><a class="name" href="deal.html"><span class="mk late">Артём Захаров</span></a><span class="money">55 000 ₽</span></div><div class="l2"><span class="say late">Просрочен звонок вчера</span><span class="ini" title="Олег Миронов">ОМ</span><button class="move" aria-label="Сменить стадию"><svg class="icon"><use href="icons.svg#dots-vertical"/></svg></button></div></li>
+<li class="entry late"><div class="l1"><a class="name" href="deal.html"><span class="mk late">Кофейня «Зерно»</span></a><span class="money">35 000 ₽</span></div><div class="l2"><span class="say late">Просрочено 6 дней</span><span class="ini" title="Ирина Соколова">ИС</span><button class="move" aria-label="Сменить стадию"><svg class="icon"><use href="icons.svg#dots-vertical"/></svg></button></div></li>
+        </ol>
+      </section>
+
+      <section class="col" aria-labelledby="c-won">
+        <header><h2 id="c-won">Сделка</h2><span class="n">5</span><span class="total">358 000 ₽</span></header>
+        <ol class="entries">
+<li class="entry"><div class="l1"><a class="name" href="deal.html"><span class="mk won">Олег Петров</span></a><span class="money">120 000 ₽</span></div><div class="l2"><span class="say desc">Заявки автосервиса</span><span class="ini" title="Олег Миронов">ОМ</span><button class="move" aria-label="Сменить стадию"><svg class="icon"><use href="icons.svg#dots-vertical"/></svg></button></div></li>
+<li class="entry"><div class="l1"><a class="name" href="deal.html">Полина Смирнова</a><span class="money">85 000 ₽</span></div><div class="l2"><span class="say desc">Запись в салон</span><span class="ini" title="Ирина Соколова">ИС</span><button class="move" aria-label="Сменить стадию"><svg class="icon"><use href="icons.svg#dots-vertical"/></svg></button></div></li>
+<li class="entry"><div class="l1"><a class="name" href="deal.html">Марина Ковалёва</a><span class="money">70 000 ₽</span></div><div class="l2"><span class="say desc">Заявки сайта в amoCRM</span><span class="ini" title="Ирина Соколова">ИС</span><button class="move" aria-label="Сменить стадию"><svg class="icon"><use href="icons.svg#dots-vertical"/></svg></button></div></li>
+<li class="entry"><div class="l1"><a class="name" href="deal.html">Игорь Белов</a><span class="money">45 000 ₽</span></div><div class="l2"><span class="say desc">Бот записи на пробное</span><span class="ini" title="Олег Миронов">ОМ</span><button class="move" aria-label="Сменить стадию"><svg class="icon"><use href="icons.svg#dots-vertical"/></svg></button></div></li>
+<li class="entry"><div class="l1"><a class="name" href="deal.html">Детский центр «Капитошка»</a><span class="money">38 000 ₽</span></div><div class="l2"><span class="say desc">Запись на пробное</span><span class="ini" title="Ирина Соколова">ИС</span><button class="move" aria-label="Сменить стадию"><svg class="icon"><use href="icons.svg#dots-vertical"/></svg></button></div></li>
+        </ol>
+      </section>
+
+      <section class="col" aria-labelledby="c-lost">
+        <header><h2 id="c-lost">Отказ</h2><span class="n">3</span><span class="total">148 000 ₽</span></header>
+        <ol class="entries">
+<li class="entry"><div class="l1"><a class="name" href="deal.html">Студия «Линия»</a><span class="money">60 000 ₽</span></div><div class="l2"><span class="say desc">Выбрали готовое решение</span><span class="ini" title="Ирина Соколова">ИС</span><button class="move" aria-label="Сменить стадию"><svg class="icon"><use href="icons.svg#dots-vertical"/></svg></button></div></li>
+<li class="entry"><div class="l1"><a class="name" href="deal.html">Ветклиника «Айболит»</a><span class="money">48 000 ₽</span></div><div class="l2"><span class="say desc">Отложили до весны</span><span class="ini" title="Ирина Соколова">ИС</span><button class="move" aria-label="Сменить стадию"><svg class="icon"><use href="icons.svg#dots-vertical"/></svg></button></div></li>
+<li class="entry"><div class="l1"><a class="name" href="deal.html">Денис Фролов</a><span class="money">40 000 ₽</span></div><div class="l2"><span class="say desc">Дорого</span><span class="ini" title="Олег Миронов">ОМ</span><button class="move" aria-label="Сменить стадию"><svg class="icon"><use href="icons.svg#dots-vertical"/></svg></button></div></li>
+        </ol>
+      </section>
+    </div>
+
+    <p class="empty-hint">Демо-данные: клиенты и суммы выдуманы. «Спроси CRM», шанс сделки и следующий шаг показаны как концепт.</p>
+  </main>
+</div>
+
+<nav class="tabbar" aria-label="Разделы">
+  <a href="board.html" aria-current="page"><svg class="icon"><use href="icons.svg#layout-kanban"/></svg>Воронка</a>
+  <a href="#"><svg class="icon"><use href="icons.svg#list-details"/></svg>Заявки</a>
+  <a href="#"><svg class="icon"><use href="icons.svg#address-book"/></svg>Клиенты</a>
+  <a href="report.html"><svg class="icon"><use href="icons.svg#chart-bar"/></svg>Отчёт</a>
+  <a href="#"><svg class="icon"><use href="icons.svg#users"/></svg>Команда</a>
+</nav>
+<script src="app.js"></script>
+</body>
+</html>

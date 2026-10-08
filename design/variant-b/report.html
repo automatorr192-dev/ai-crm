@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Отчёт · AI-CRM</title>
+<link rel="preload" href="fonts/golos-400-700-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+<script>document.documentElement.classList.add("js")</script>
+</head>
+<body>
+<a class="skip" href="#main">К содержимому</a>
+<div class="shell">
+  <aside class="side">
+    <a class="brand" href="board.html"><b class="mk">AI</b>-CRM</a>
+    <nav aria-label="Разделы">
+      <a href="board.html"><svg class="icon"><use href="icons.svg#layout-kanban"/></svg>Воронка</a>
+      <a href="#"><svg class="icon"><use href="icons.svg#list-details"/></svg>Заявки<span class="count">22</span></a>
+      <a href="#"><svg class="icon"><use href="icons.svg#address-book"/></svg>Клиенты</a>
+      <a href="report.html" aria-current="page"><svg class="icon"><use href="icons.svg#chart-bar"/></svg>Отчёт</a>
+      <a href="#"><svg class="icon"><use href="icons.svg#users"/></svg>Команда</a>
+      <a href="#"><svg class="icon"><use href="icons.svg#history"/></svg>Журнал</a>
+    </nav>
+    <div class="me"><i>АК</i><div>Анна Котова<small>владелец</small></div></div>
+  </aside>
+
+  <main class="main" id="main">
+    <div class="bar">
+      <div class="ask">
+        <svg class="icon"><use href="icons.svg#search"/></svg>
+        <input type="search" aria-label="Спросить CRM" placeholder="Спросите, какая реклама окупается">
+        <div class="answer" role="status">
+          <p class="q">Какая реклама окупается лучше всего?</p>
+          <p class="a">Яндекс Директ, кампания crm-uslugi: 7 заявок и 2 сделки на 130 000 ₽ за 30 дней.</p>
+          <p class="who-said"><svg class="icon"><use href="icons.svg#sparkles"/></svg>Посчитано по меткам UTM</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="day">
+      <h1>Отчёт с 8 сентября по 7 октября</h1>
+      <a class="btn primary" href="#" aria-label="Выгрузить в Excel"><svg class="icon"><use href="icons.svg#download"/></svg><span>Выгрузить в Excel</span></a>
+    </div>
+    <div class="period" data-group aria-label="Период">
+      <button class="btn quiet" aria-pressed="false">7 дней</button>
+      <button class="btn" aria-pressed="true">30 дней</button>
+      <button class="btn quiet" aria-pressed="false">90 дней</button>
+    </div>
+
+    <p class="summary">Пришло 22 заявки, пять стали сделками на <span class="mk won">358 000 ₽</span>. Сейчас в работе 404 000 ₽, и <span class="mk late">три сделки на 132 000 ₽ просрочены</span>. Первый ответ клиент получает в среднем через 13 минут.</p>
+
+    <div class="report">
+      <div>
+        <section class="panel" aria-labelledby="st-t">
+          <h2 id="st-t">Где стоят заявки</h2>
+          <div class="scroll-x">
+            <table class="stages-table">
+              <thead><tr><th>Стадия</th><th class="num">Заявок</th><th><span class="sr">Доля заявок</span></th><th class="num">Сумма</th></tr></thead>
+              <tbody>
+                <tr><td>Новые</td><td class="num">5</td><td class="bar"><i class="fill" style="width:83%"></i></td><td class="num">без суммы</td></tr>
+                <tr><td>В работе</td><td class="num">6</td><td class="bar"><i class="fill" style="width:100%"></i></td><td class="num">404 000 ₽</td></tr>
+                <tr><td>Ждём ответа</td><td class="num">3</td><td class="bar"><i class="fill" style="width:50%"></i></td><td class="num">155 000 ₽</td></tr>
+                <tr><td>Сделка</td><td class="num">5</td><td class="bar"><i class="fill won" style="width:83%"></i></td><td class="num">358 000 ₽</td></tr>
+                <tr><td>Отказ</td><td class="num">3</td><td class="bar"><i class="fill lost" style="width:50%"></i></td><td class="num">148 000 ₽</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="ad-t">
+          <h2 id="ad-t">Реклама</h2>
+          <div class="scroll-x">
+            <table>
+              <thead><tr><th>Источник и кампания</th><th class="num">Заявок</th><th class="num">Сделок</th><th class="num">Выручка</th></tr></thead>
+              <tbody>
+                <tr><td class="strong">Яндекс Директ<small>crm-uslugi</small></td><td class="num">7</td><td class="num">2</td><td class="num strong">130 000 ₽</td></tr>
+                <tr><td>Google<small>brand</small></td><td class="num">4</td><td class="num">1</td><td class="num">70 000 ₽</td></tr>
+                <tr><td>ВКонтакте<small>osen-2026</small></td><td class="num">3</td><td class="num">0</td><td class="num">нет сделок</td></tr>
+                <tr><td>Telegram<small>post-crm</small></td><td class="num">3</td><td class="num">0</td><td class="num">нет сделок</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <div>
+        <section class="panel asked" aria-labelledby="q-t">
+          <h2 id="q-t">Спросили CRM<span class="by"><svg class="icon"><use href="icons.svg#sparkles"/></svg>ответ ИИ</span></h2>
+          <p class="q">Кто из менеджеров отвечает быстрее?</p>
+          <p class="a">Ирина отвечает в среднем за <b>6 минут</b>, Олег за <b>19 минут</b>. Но две из трёх просроченных сделок у Ирины: у неё больше всего денег в работе.</p>
+        </section>
+
+        <section class="panel" aria-labelledby="t-t">
+          <h2 id="t-t">Кто ведёт</h2>
+          <div class="scroll-x">
+            <table>
+              <thead><tr><th>Сотрудник</th><th class="num">Сделок</th><th class="num">Ответ</th><th class="num">Выиграно</th></tr></thead>
+              <tbody>
+                <tr><td class="strong">Ирина Соколова</td><td class="num">9</td><td class="num">6 мин</td><td class="num strong">193 000 ₽</td></tr>
+                <tr><td class="strong">Олег Миронов</td><td class="num">9</td><td class="num">19 мин</td><td class="num strong">165 000 ₽</td></tr>
+                <tr><td>Без ответственного</td><td class="num">4</td><td class="num">нет</td><td class="num">нет</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+    <p class="empty-hint">Демо-данные. «Спроси CRM» показан как концепт.</p>
+  </main>
+</div>
+
+<nav class="tabbar" aria-label="Разделы">
+  <a href="board.html"><svg class="icon"><use href="icons.svg#layout-kanban"/></svg>Воронка</a>
+  <a href="#"><svg class="icon"><use href="icons.svg#list-details"/></svg>Заявки</a>
+  <a href="#"><svg class="icon"><use href="icons.svg#address-book"/></svg>Клиенты</a>
+  <a href="report.html" aria-current="page"><svg class="icon"><use href="icons.svg#chart-bar"/></svg>Отчёт</a>
+  <a href="#"><svg class="icon"><use href="icons.svg#users"/></svg>Команда</a>
+</nav>
+<script src="app.js"></script>
+</body>
+</html>
