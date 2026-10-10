@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: ai-crm-demo
+    runtime: docker
+    plan: free
+    region: frankfurt
+    healthCheckPath: /health
+    dockerCommand: uvicorn app:app --host 0.0.0.0 --port 10000
+    envVars:
+      - key: DEMO_MODE
+        value: "1"
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: WEBHOOK_SECRET
+        generateValue: true
+      - key: INTAKE_TOKEN
+        generateValue: true
+      - key: ALLOWED_ORIGINS
+        value: https://automatorr192-dev.github.io
+      - key: MODELS
+        value: nvidia/nemotron-3-super-120b-a12b:free
+      - key: OPENROUTER_API_KEY
+        sync: false
