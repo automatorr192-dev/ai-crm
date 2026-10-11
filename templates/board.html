@@ -2,58 +2,89 @@
 {% block title %}Воронка{% endblock %}
 
 {% block styles %}
-    /* Доска шире экрана по замыслу: стадий пять, и ужимать их в ширину телефона
-       значило бы превратить карточки в нечитаемые полоски. Скроллим вбок. */
-    .board { display: flex; gap: 12px; align-items: flex-start; overflow-x: auto; padding-bottom: 12px; }
-    /* 244 — ширина, при которой пять стадий целиком помещаются на ноутбучные 1360.
-       Шире — и последняя колонка обрезается, а обрезанная стадия читается как «всё». */
-    .col { flex: 0 0 244px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-card); }
-    .col-top {
-      display: flex; align-items: center; gap: 8px;
-      padding: 12px 14px; border-bottom: 1px solid var(--line);
-      position: sticky; top: 0; background: var(--panel); border-radius: var(--r-card) var(--r-card) 0 0;
-    }
-    .col-top h2 { font-size: 13.5px; }
-    .col-top .n { margin-left: auto; font-size: 12.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
-    .col-sum { padding: 0 14px 10px; font-size: 12.5px; color: var(--ink-3); }
-    .col-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 90px; }
-    .col.over { border-color: var(--accent); }
-    .col.over .col-body { background: var(--accent-soft); border-radius: var(--r-block); }
+    .head { display: flex; align-items: flex-end; gap: 16px 28px; flex-wrap: wrap; }
+    .figures { display: flex; gap: 28px; flex-wrap: wrap; }
+    .figure span { display: block; font-size: 12.5px; color: var(--ink-3); }
+    .figure b { font-family: var(--money); font-weight: 400; font-size: 24px; line-height: 1.1; }
+    .head .actions { margin-left: auto; display: flex; gap: 10px; flex-wrap: wrap; }
 
-    .deal {
-      display: block; text-decoration: none;
-      background: var(--surface); border: 1px solid var(--line);
-      border-radius: var(--r-block); padding: 11px 12px;
-      cursor: grab; box-shadow: var(--shadow);
-      transition: border-color var(--fast), transform var(--fast), opacity var(--fast);
-    }
-    .deal:hover { border-color: var(--line-strong); }
+    .alarm { margin-top: 22px; display: flex; align-items: center; gap: 6px 14px; flex-wrap: wrap; padding: 12px 16px; border-radius: 6px; background: var(--carmine-soft); color: var(--carmine); font-size: 14.5px; }
+    .alarm b { font-weight: 650; }
+    .alarm a { margin-left: auto; font-weight: 600; }
+    .board-filters { margin: 22px 0 0; }
+
+    /* Пять стадий целиком помещаются на ноутбучные 1366; уже — доска уходит вбок,
+       а не ужимает карточки в нечитаемые полоски. */
+    .board { margin-top: 18px; display: grid; grid-template-columns: repeat(5, minmax(244px, 1fr)); border-top: 1px solid var(--rule-strong); border-bottom: 1px solid var(--rule-strong); overflow-x: auto; scroll-snap-type: x proximity; }
+    .col { border-right: 1px solid var(--rule); padding: 4px 12px 18px; min-height: 420px; scroll-snap-align: start; transition: background-color .16s var(--ease); }
+    .col:first-child { padding-left: 0; }
+    .col:last-child { border-right: 0; padding-right: 0; }
+    .col.over { background: color-mix(in srgb, var(--engrave-soft) 45%, transparent); }
+    .col-head { display: flex; align-items: baseline; gap: 8px; padding: 14px 2px 12px; border-bottom: 3px double var(--rule-strong); margin-bottom: 12px; }
+    .col-head h2 { font-size: 14.5px; font-weight: 600; }
+    .col-head .n { font-size: 13px; color: var(--ink-3); }
+    .col-head .sum { margin-left: auto; font-family: var(--money); font-size: 16px; }
+    .cards { display: flex; flex-direction: column; gap: 10px; min-height: 60px; }
+    .col-empty { font-size: 13px; color: var(--ink-3); padding: 14px 4px; text-align: center; }
+
+    .deal { display: block; text-decoration: none; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 12px 13px; cursor: grab; transition: border-color .2s var(--ease), opacity .2s var(--ease); }
     .deal.dragging { opacity: .45; cursor: grabbing; }
-    .deal.fresh { animation: arrive 320ms cubic-bezier(.2,.8,.2,1); }
+    .deal.fresh { animation: arrive 320ms var(--ease); }
     @keyframes arrive { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+    .deal .serial { display: flex; gap: 8px; font-size: 11.5px; color: var(--engrave); letter-spacing: .04em; }
+    .deal .serial time { margin-left: auto; color: var(--ink-3); letter-spacing: 0; }
+    .deal h3 { font-size: 14.5px; font-weight: 600; line-height: 1.3; margin-top: 2px; overflow-wrap: anywhere; }
+    .deal p.text { font-size: 13px; color: var(--ink-2); margin-top: 3px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+    .deal .marks { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 9px; }
+    .tag.high { background: var(--carmine-soft); color: var(--carmine); }
+    .waiting-ai { font-size: 12.5px; color: var(--ink-3); }
+    .deal .foot { display: flex; align-items: center; gap: 10px; margin-top: 10px; min-height: 24px; }
+    .deal .foot .money { font-size: 17px; }
+    .deal .who { margin-left: auto; width: 24px; height: 24px; flex: none; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 650; background: var(--engrave-soft); color: var(--engrave); }
+    .deal .who.none { background: transparent; border: 1px dashed var(--rule-strong); color: var(--ink-3); }
+    .deal .late-note { font-size: 12.5px; color: var(--carmine); font-weight: 550; margin-top: 8px; }
+    .deal .hot { font-size: 12.5px; font-weight: 600; color: var(--violet); margin-top: 8px; }
+    .deal.won { border-color: color-mix(in srgb, var(--gold) 55%, var(--rule)); }
+    .deal.won .serial { color: var(--gold); }
+    .deal.lost .serial, .deal.lost .money { color: var(--ink-3); }
+    @media (hover: hover) and (pointer: fine) { .deal:hover { border-color: var(--rule-strong); } }
 
-    .deal-top { display: flex; align-items: baseline; gap: 7px; }
-    .deal-who { font-weight: 600; font-size: 14px; }
-    .deal-time { margin-left: auto; font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); }
-    .deal-text { font-size: 13px; color: var(--ink-2); margin-top: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .deal-foot { display: flex; align-items: center; gap: 6px; margin-top: 9px; flex-wrap: wrap; }
-    .deal-foot .who { margin-left: auto; font-size: 11.5px; color: var(--ink-3); }
-    .hot-tag { font-size: 11px; font-weight: 650; padding: 1px 8px; border-radius: var(--r-pill); background: var(--accent); color: #fff; }
-    .waiting-line { font-size: 12px; color: var(--ink-3); margin-top: 8px; }
-
-    .col-empty { font-size: 12.5px; color: var(--ink-3); padding: 12px 4px; text-align: center; }
+    @media (max-width: 760px) {
+      .head .actions { margin-left: 0; width: 100%; }
+      .alarm a { margin-left: 0; }
+      .board { grid-template-columns: repeat(5, 86%); scroll-snap-type: x mandatory; }
+      .col { padding: 0 10px 14px; }
+    }
 {% endblock %}
 
 {% block body %}
+{% set cards = columns.values() | sum(start=[]) %}
+{% set open = columns['new'] + columns['in_work'] + columns['waiting'] %}
+{% set late = cards | selectattr('overdue') | list %}
 <main class="wrap">
-  <div class="head-row">
+  <div class="head">
     <h1>Воронка</h1>
-    <span class="muted">Перетащите карточку, чтобы сменить стадию</span>
-    {% if me.can_edit %}<div class="actions"><a class="btn primary" href="/leads/new">+ Заявка</a></div>{% endif %}
+    <div class="figures">
+      <div class="figure"><span>В работе сейчас</span><b class="money">{{ '{:,.0f}'.format(open | map(attribute='amount') | select | sum).replace(',', ' ') }} ₽</b></div>
+      <div class="figure"><span>Выиграно</span><b class="money">{{ '{:,.0f}'.format(columns['won'] | map(attribute='amount') | select | sum).replace(',', ' ') }} ₽</b></div>
+      {% if cards %}<div class="figure"><span>Дошли до сделки</span><b class="money">{{ (columns['won'] | length * 100 / cards | length) | round | int }}%</b></div>{% endif %}
+    </div>
+    <div class="actions">
+      <a class="btn" href="/export/leads.xlsx">Выгрузить в Excel</a>
+      {% if me.can_edit %}<a class="btn primary" href="/leads/new">Новая заявка</a>{% endif %}
+    </div>
   </div>
 
-  <div class="filters">
-    <a class="chip-link" href="/" aria-current="{{ 'true' if not assignee_id else 'false' }}">все</a>
+  {% if late %}
+  <p class="alarm">
+    <b>Просрочено: {{ late | length }}</b>
+    {{ late[:3] | map(attribute='name') | map('default', 'без имени', true) | join(', ') }}{% if late | length > 3 %} и ещё {{ late | length - 3 }}{% endif %}
+    <a href="/leads?overdue=true">Показать</a>
+  </p>
+  {% endif %}
+
+  <div class="filters board-filters" aria-label="Чьи сделки">
+    <a class="chip-link" href="/" aria-current="{{ 'true' if not assignee_id else 'false' }}">Все</a>
     {% for person in people %}
     <a class="chip-link" href="/?assignee_id={{ person.id }}"
        aria-current="{{ 'true' if assignee_id == person.id else 'false' }}">{{ person.name }}</a>
@@ -62,33 +93,37 @@
 
   <div class="board" id="board">
     {% for stage in stages %}
+    {% set money = columns[stage] | map(attribute='amount') | select | sum %}
     <section class="col" data-stage="{{ stage }}" aria-label="{{ stage_ru[stage] }}">
-      <div class="col-top">
+      <div class="col-head">
         <h2>{{ stage_ru[stage] }}</h2>
         <span class="n" data-n>{{ columns[stage] | length }}</span>
+        <span class="sum" data-sum>{% if money %}{{ '{:,.0f}'.format(money).replace(',', ' ') }} ₽{% endif %}</span>
       </div>
-      {% set money = columns[stage] | map(attribute='amount') | select | sum %}
-      {% if money %}<div class="col-sum" data-sum>{{ '{:,.0f}'.format(money).replace(',', ' ') }} ₽</div>{% endif %}
-
-      <div class="col-body" data-body>
+      <div class="cards" data-body>
         {% for lead in columns[stage] %}
-        <a class="deal" href="/leads/{{ lead.id }}" draggable="true" data-id="{{ lead.id }}">
-          <div class="deal-top">
-            <span class="deal-who">{{ lead.name or lead.contact or 'Без имени' }}</span>
-            <span class="deal-time">{{ lead.time }}</span>
-          </div>
-          <p class="deal-text">{{ lead.text }}</p>
-          <div class="deal-foot">
+        <a class="deal{% if stage in ('won', 'lost') %} {{ stage }}{% endif %}" href="/leads/{{ lead.id }}" draggable="true" data-id="{{ lead.id }}">
+          <div class="serial">№ {{ '%04d' % lead.id }}<time>{{ lead.time }}</time></div>
+          <h3>{{ lead.name or lead.contact or 'Без имени' }}</h3>
+          <p class="text">{{ lead.text }}</p>
+          <div class="marks" data-marks>
             {% if lead.topic %}
-            <span class="urg u-{{ lead.urgency }}"><i aria-hidden="true"></i>{{ urgency_ru.get(lead.urgency, lead.urgency) }}</span>
+            <span class="tag">{{ lead.topic }}</span>
+            {% if lead.urgency == 'high' %}<span class="tag high">срочно</span>{% endif %}
             {% else %}
-            <span class="waiting-line">модель читает заявку</span>
+            <span class="waiting-ai">модель читает заявку</span>
             {% endif %}
-            {% if lead.hot %}<span class="hot-tag">горячий</span>{% endif %}
-            {% if lead.amount %}<span class="money">{{ '{:,.0f}'.format(lead.amount).replace(',', ' ') }} ₽</span>{% endif %}
-            {% if lead.overdue %}<span class="overdue">просрочено</span>{% endif %}
-            {% if lead.assignee %}<span class="who">{{ lead.assignee }}</span>{% endif %}
           </div>
+          <div class="foot">
+            {% if lead.amount %}<span class="money">{{ '{:,.0f}'.format(lead.amount).replace(',', ' ') }} ₽</span>{% endif %}
+            {% if lead.assignee %}
+            <span class="who" title="{{ lead.assignee }}">{{ ((lead.assignee.split() | map('first') | join)[:2]) | upper }}</span>
+            {% else %}
+            <span class="who none" title="Не назначен">—</span>
+            {% endif %}
+          </div>
+          {% if lead.overdue %}<p class="late-note">Срок прошёл</p>{% endif %}
+          {% if lead.hot %}<p class="hot">Горячий: ассистент квалифицировал клиента</p>{% endif %}
         </a>
         {% else %}
         <p class="col-empty">пусто</p>
@@ -103,6 +138,7 @@
 {% block scripts %}
 <script>
   const CAN_EDIT = {{ me.can_edit | tojson }};
+  const URGENCY_HIGH = 'high';
   const board = document.getElementById('board');
 
   /* Перетаскивание карточек между стадиями.
@@ -147,9 +183,8 @@
 
     // Карточку переносим сразу, не дожидаясь сервера: рука уже отпустила её здесь,
     // и подождать полсекунды на месте прошлой колонки выглядело бы как сбой.
-    col.querySelector('[data-body]').prepend(deal);
+    place(deal, col);
     recount(from);
-    recount(col);
 
     const body = new FormData();
     body.append('stage', col.dataset.stage);
@@ -160,12 +195,18 @@
       if (!response.ok) throw new Error(response.status);
     } catch {
       // Не доехало — возвращаем карточку, иначе экран будет врать про стадию.
-      from.querySelector('[data-body]').prepend(deal);
-      recount(from);
+      place(deal, from);
       recount(col);
       say('Не удалось сменить стадию');
     }
   });
+
+  function place(deal, col) {
+    col.querySelector('[data-body]').prepend(deal);
+    deal.classList.toggle('won', col.dataset.stage === 'won');
+    deal.classList.toggle('lost', col.dataset.stage === 'lost');
+    recount(col);
+  }
 
   function recount(col) {
     const deals = col.querySelectorAll('.deal');
@@ -182,66 +223,53 @@
 
     let total = 0;
     deals.forEach(deal => {
-      const money = deal.querySelector('.money');
+      const money = deal.querySelector('.foot .money');
       if (money) total += parseInt(money.textContent.replace(/\D/g, ''), 10) || 0;
     });
-    let line = col.querySelector('[data-sum]');
-    if (total && !line) {
-      line = document.createElement('div');
-      line.className = 'col-sum';
-      line.dataset.sum = '';
-      col.querySelector('.col-top').after(line);
-    }
-    if (line) line.textContent = total ? total.toLocaleString('ru-RU') + ' ₽' : '';
+    col.querySelector('[data-sum]').textContent = total ? total.toLocaleString('ru-RU') + ' ₽' : '';
   }
 
   /* --- живое обновление --------------------------------------------------- */
 
+  function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    // textContent, а не innerHTML: текст заявки пишет посторонний человек, и вставка
+    // его разметкой означала бы чужой скрипт внутри рабочей системы.
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function fillMarks(marks, lead) {
+    marks.textContent = '';
+    if (!lead.topic) {
+      marks.append(el('span', 'waiting-ai', 'модель читает заявку'));
+      return;
+    }
+    marks.append(el('span', 'tag', lead.topic));
+    if (lead.urgency === URGENCY_HIGH) marks.append(el('span', 'tag high', 'срочно'));
+  }
+
   function buildDeal(lead) {
-    const card = document.createElement('a');
-    card.className = 'deal fresh';
+    const card = el('a', 'deal fresh');
     card.href = '/leads/' + lead.id;
     card.draggable = true;
     card.dataset.id = lead.id;
 
-    const top = document.createElement('div');
-    top.className = 'deal-top';
-    const who = document.createElement('span');
-    who.className = 'deal-who';
-    who.textContent = lead.name || lead.contact || 'Без имени';
-    const when = document.createElement('span');
-    when.className = 'deal-time';
-    when.textContent = lead.time;
-    top.append(who, when);
+    const serial = el('div', 'serial', '№ ' + String(lead.id).padStart(4, '0'));
+    serial.append(el('time', '', lead.time));
 
-    // textContent, а не innerHTML: текст заявки пишет посторонний человек, и вставка
-    // его разметкой означала бы чужой скрипт внутри рабочей системы.
-    const text = document.createElement('p');
-    text.className = 'deal-text';
-    text.textContent = lead.text;
+    const marks = el('div', 'marks');
+    marks.dataset.marks = '';
+    fillMarks(marks, lead);
 
-    const foot = document.createElement('div');
-    foot.className = 'deal-foot';
-    foot.append(markup(lead));
+    const foot = el('div', 'foot');
+    const who = el('span', 'who none', '—');
+    who.title = 'Не назначен';
+    foot.append(who);
 
-    card.append(top, text, foot);
+    card.append(serial, el('h3', '', lead.name || lead.contact || 'Без имени'), el('p', 'text', lead.text), marks, foot);
     return card;
-  }
-
-  function markup(lead) {
-    if (!lead.topic) {
-      const waiting = document.createElement('span');
-      waiting.className = 'waiting-line';
-      waiting.textContent = 'модель читает заявку';
-      return waiting;
-    }
-    const urg = document.createElement('span');
-    urg.className = 'urg u-' + lead.urgency;
-    const dot = document.createElement('i');
-    dot.setAttribute('aria-hidden', 'true');
-    const RU = {{ urgency_ru | tojson }};
-    urg.append(dot, document.createTextNode(RU[lead.urgency] || lead.urgency));
-    return urg;
   }
 
   window.onCrmEvent.push((kind, lead) => {
@@ -253,20 +281,15 @@
       col.querySelector('[data-body]').prepend(buildDeal(lead));
       recount(col);
     } else if (kind === 'lead.marked' && existing) {
-      const foot = existing.querySelector('.deal-foot');
-      foot.replaceChild(markup(lead), foot.firstChild);
-    } else if (kind === 'lead.message' && existing && lead.hot && !existing.querySelector('.hot-tag')) {
-      const tag = document.createElement('span');
-      tag.className = 'hot-tag';
-      tag.textContent = 'горячий';
-      existing.querySelector('.deal-foot').append(tag);
+      fillMarks(existing.querySelector('[data-marks]'), lead);
+    } else if (kind === 'lead.message' && existing && lead.hot && !existing.querySelector('.hot')) {
+      existing.append(el('p', 'hot', 'Горячий: ассистент квалифицировал клиента'));
     } else if (kind === 'lead.stage' && existing) {
       const target = board.querySelector(`.col[data-stage="${lead.stage}"]`);
       const from = existing.closest('.col');
       if (!target || target === from) return;
-      target.querySelector('[data-body]').prepend(existing);
+      place(existing, target);
       recount(from);
-      recount(target);
     }
   });
 </script>

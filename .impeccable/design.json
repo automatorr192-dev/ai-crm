@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-08T17:12:04+00:00",
+  "generatedAt": "2026-10-11T02:24:12+00:00",
   "title": "Design System: AI-CRM",
   "extensions": {
     "colorMeta": {
@@ -112,15 +112,15 @@
       "gold": {
         "role": "tertiary",
         "displayName": "Золото",
-        "canonical": "#a8822a",
+        "canonical": "#86661d",
         "tonalRamp": [
           "#110a00",
           "#312200",
-          "#543e08",
-          "#7b5c0b",
-          "#a27c22",
-          "#c69f4b",
-          "#ebc370",
+          "#553e00",
+          "#7b5c0d",
+          "#9e7d37",
+          "#c2a05b",
+          "#e7c47f",
           "#ffecc9"
         ]
       },
@@ -232,13 +232,13 @@
       "ink-3": {
         "role": "neutral",
         "displayName": "Вспомогательные чернила",
-        "canonical": "#66756f",
+        "canonical": "#5b6a64",
         "tonalRamp": [
           "#030e0a",
           "#1b2823",
           "#384640",
           "#56655f",
-          "#778680",
+          "#778780",
           "#99a9a3",
           "#bdcec7",
           "#e2f3ec"
@@ -482,6 +482,21 @@
           "#99a9a2",
           "#bdcec6",
           "#e2f3ec"
+        ]
+      },
+      "bar-dark": {
+        "role": "primary",
+        "displayName": "Глубокая гравюра панели (тёмная тема)",
+        "canonical": "#18302a",
+        "tonalRamp": [
+          "#000f0b",
+          "#122a24",
+          "#2f4841",
+          "#4e6860",
+          "#6f8981",
+          "#91aca4",
+          "#b4d0c8",
+          "#d9f6ee"
         ]
       }
     },

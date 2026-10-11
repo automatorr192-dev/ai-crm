@@ -2,147 +2,164 @@
 {% block title %}Отчёт{% endblock %}
 
 {% block styles %}
-    .cards { display: grid; gap: 12px; margin-bottom: 16px; }
-    @media (min-width: 700px) { .cards { grid-template-columns: repeat(4, 1fr); } }
-    .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-card); padding: 16px; }
-    .card b { display: block; font-size: 24px; font-weight: 640; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
-    .card span { font-size: 12.5px; color: var(--ink-3); }
-    .card .hint { font-size: 12px; color: var(--ink-3); margin-top: 6px; }
+    .head { display: flex; align-items: flex-end; gap: 14px 22px; flex-wrap: wrap; }
+    .head .filters { margin: 0; }
+    .head .muted { align-self: baseline; }
 
-    .bar-row { display: grid; grid-template-columns: 110px 1fr 56px; align-items: center; gap: 10px; padding: 5px 0; }
-    .bar-row .name { font-size: 13.5px; color: var(--ink-2); }
-    .track { background: var(--panel); border-radius: var(--r-pill); height: 9px; overflow: hidden; }
-    .fill { height: 100%; background: var(--accent); border-radius: var(--r-pill); }
-    .fill.won { background: var(--ok); }
-    .fill.lost { background: var(--line-strong); }
-    .bar-row .n { text-align: right; font-size: 13px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+    .kpis { margin-top: 24px; display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; border: 1px solid var(--rule-strong); border-radius: 10px; overflow: hidden; background: var(--sheet); }
+    .kpi { padding: 20px 22px; border-right: 1px solid var(--rule); }
+    .kpi:last-child { border-right: 0; }
+    .kpi span { font-size: 13px; color: var(--ink-3); }
+    .kpi b { display: block; font-family: var(--money); font-size: 34px; font-weight: 400; line-height: 1.1; margin-top: 4px; }
+    .kpi small { display: block; font-size: 12.5px; color: var(--ink-3); margin-top: 4px; }
+    .kpi.lead { background: var(--bar); color: var(--bar-ink); position: relative; overflow: hidden; }
+    .kpi.lead span, .kpi.lead small { color: inherit; opacity: .8; }
+    .kpi.lead b { font-size: 46px; position: relative; }
+    .kpi.lead svg { position: absolute; right: -40px; top: -40px; width: 220px; height: 220px; opacity: .22; }
 
-    table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    th { text-align: left; font-size: 12.5px; font-weight: 600; color: var(--ink-3); padding: 6px 8px; border-bottom: 1px solid var(--line); }
-    td { padding: 9px 8px; border-bottom: 1px solid var(--line); }
-    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-    tr:last-child td { border-bottom: 0; }
+    .report-grid { margin-top: 22px; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+    .panel h2 { margin-bottom: 14px; }
+    .funnel { display: grid; gap: 10px; }
+    .funnel-row { display: grid; grid-template-columns: 120px 1fr 56px; align-items: center; gap: 12px; font-size: 14px; }
+    .funnel-row .bar { height: 12px; border-radius: 6px; background: var(--engrave-soft); overflow: hidden; }
+    .funnel-row .bar i { display: block; height: 100%; background: var(--engrave); border-radius: 6px; }
+    .funnel-row.won .bar i { background: var(--gold); }
+    .funnel-row.lost .bar i { background: var(--rule-strong); }
+    .funnel-row .n { text-align: right; color: var(--ink-2); }
+    .scroll-x { overflow-x: auto; }
+    td small { display: block; font-size: 12.5px; color: var(--ink-3); }
+
+    @media (max-width: 760px) {
+      .kpis { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+      .kpi { border-bottom: 1px solid var(--rule); }
+      .kpi:nth-child(2n+1) { border-right: 0; }
+      .kpi.lead, .kpi:last-child { grid-column: 1 / -1; }
+      .kpi b { font-size: 28px; }
+      .report-grid { grid-template-columns: minmax(0, 1fr); }
+      .funnel-row { grid-template-columns: 96px 1fr 40px; }
+    }
 {% endblock %}
 
 {% block body %}
 <main class="wrap">
-  <div class="head-row">
-    <h1>Отчёт</h1>
+  <div class="head">
+    <h1>Отчёт за {{ days }} дней</h1>
     {% if not me.sees_all %}<span class="muted">по вашим сделкам</span>{% endif %}
-    <div class="filters" style="margin:0">
+    <div class="filters" aria-label="Период">
       {% for period in [7, 30, 90] %}
-      <a class="chip-link" href="/report?days={{ period }}" aria-current="{{ 'true' if days == period else 'false' }}">
-        {{ period }} дней
-      </a>
+      <a class="chip-link" href="/report?days={{ period }}" aria-current="{{ 'true' if days == period else 'false' }}">{{ period }} дней</a>
       {% endfor %}
     </div>
   </div>
 
-  <div class="cards">
-    <div class="card">
-      <b>{{ report.total }}</b>
-      <span>заявок за период</span>
+  <div class="kpis">
+    <div class="kpi lead">
+      <svg data-chance="1"></svg>
+      <span>Деньги в работе</span>
+      <b class="money">{{ '{:,.0f}'.format(report.in_work_amount).replace(',', ' ') }} ₽</b>
+      <small>сумма незакрытых сделок</small>
     </div>
-    <div class="card">
-      <b>{{ report.conversion }}%</b>
-      <span>дошли до сделки</span>
-    </div>
-    <div class="card">
-      <b>{{ '{:,.0f}'.format(report.in_work_amount).replace(',', ' ') }} ₽</b>
-      <span>сейчас в работе</span>
-      <p class="hint">сумма незакрытых сделок</p>
-    </div>
-    <div class="card">
+    <div class="kpi"><span>Заявок</span><b class="money">{{ report.total }}</b><small>за {{ days }} дней</small></div>
+    <div class="kpi"><span>Дошли до сделки</span><b class="money">{{ report.conversion }}%</b><small>от всех заявок за период</small></div>
+    <div class="kpi">
+      <span>До первого ответа</span>
       {% if report.answer_minutes is not none %}
       {# «0 мин» читается как сбой, а не как быстрый ответ. #}
-      <b>
+      <b class="money">
         {%- if report.answer_minutes >= 60 %}{{ report.answer_minutes // 60 }} ч
         {%- elif report.answer_minutes < 1 %}меньше минуты
         {%- else %}{{ report.answer_minutes }} мин{% endif -%}
-      </b>{% endif %}
-      {% if report.answer_minutes is not none %}
-      <span>до первого ответа</span>
-      <p class="hint">по {{ report.answered_count }} заявкам, где человек уже среагировал</p>
+      </b>
+      <small>по {{ report.answered_count }} заявкам, где человек уже ответил</small>
       {% else %}
-      <b>—</b>
-      <span>до первого ответа</span>
-      <p class="hint">пока никто не отвечал</p>
+      <b class="money">—</b>
+      <small>пока никто не отвечал</small>
       {% endif %}
     </div>
   </div>
 
-  <section class="panel">
-    <h2 style="margin-bottom:10px">Где стоят заявки</h2>
-    {% set peak = report.by_stage.values() | max if report.by_stage else 1 %}
-    {% for stage in stages %}
-    {% set value = report.by_stage.get(stage, 0) %}
-    <div class="bar-row">
-      <span class="name">{{ stage_ru[stage] }}</span>
-      <div class="track">
-        <div class="fill {% if stage == 'won' %}won{% elif stage == 'lost' %}lost{% endif %}"
-             style="width: {{ (value / peak * 100) | round if peak else 0 }}%"></div>
-      </div>
-      <span class="n">{{ value }}</span>
+  <div class="report-grid">
+    <div>
+      <section class="panel">
+        <h2>Где стоят заявки</h2>
+        {% set peak = report.by_stage.values() | max if report.by_stage else 1 %}
+        <div class="funnel">
+          {% for stage in stages %}
+          {% set value = report.by_stage.get(stage, 0) %}
+          <div class="funnel-row{% if stage in ('won', 'lost') %} {{ stage }}{% endif %}">
+            <span>{{ stage_ru[stage] }}</span>
+            <div class="bar"><i style="width: {{ (value / peak * 100) | round if peak else 0 }}%"></i></div>
+            <span class="n">{{ value }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Рекламные кампании</h2>
+        <div class="scroll-x">
+          <table>
+            <thead>
+              <tr><th>Источник и кампания</th><th class="num">Заявок</th><th class="num">Сделок</th><th class="num">Выручка</th></tr>
+            </thead>
+            <tbody>
+              {% for source, campaign, count, deals, money in report.by_campaign %}
+              <tr>
+                <td>{{ source }}<small>{{ campaign }}</small></td>
+                <td class="num">{{ count }}</td>
+                <td class="num">{{ deals }}</td>
+                <td class="num">{% if money %}<span class="money">{{ '{:,.0f}'.format(money).replace(',', ' ') }} ₽</span>{% else %}нет сделок{% endif %}</td>
+              </tr>
+              {% else %}
+              <tr><td colspan="4" class="muted">Заявок с UTM-метками за период не было. Метки приходят из ссылок рекламы: ?utm_source=yandex&amp;utm_campaign=…</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
-    {% endfor %}
-  </section>
 
-  <section class="panel">
-    <h2 style="margin-bottom:10px">Откуда приходят</h2>
-    {% if report.by_source %}
-    {% set top = report.by_source.values() | max %}
-    {% for source, value in report.by_source.items() %}
-    <div class="bar-row">
-      <span class="name">{{ source }}</span>
-      <div class="track"><div class="fill" style="width: {{ (value / top * 100) | round }}%"></div></div>
-      <span class="n">{{ value }}</span>
+    <div>
+      <section class="panel">
+        <h2>Откуда приходят</h2>
+        {% if report.by_source %}
+        {% set top = report.by_source.values() | max %}
+        <div class="funnel">
+          {% for source, value in report.by_source.items() %}
+          <div class="funnel-row">
+            <span>{{ source }}</span>
+            <div class="bar"><i style="width: {{ (value / top * 100) | round }}%"></i></div>
+            <span class="n">{{ value }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="muted">За период заявок не было.</p>
+        {% endif %}
+      </section>
+
+      <section class="panel">
+        <h2>Кто ведёт</h2>
+        <div class="scroll-x">
+          <table>
+            <thead>
+              <tr><th>Сотрудник</th><th class="num">Заявок</th><th class="num">Сумма</th></tr>
+            </thead>
+            <tbody>
+              {% for name, count, total in report.by_user %}
+              <tr>
+                <td>{{ name }}</td>
+                <td class="num">{{ count }}</td>
+                <td class="num">{% if total %}<span class="money">{{ '{:,.0f}'.format(total).replace(',', ' ') }} ₽</span>{% else %}—{% endif %}</td>
+              </tr>
+              {% else %}
+              <tr><td colspan="3" class="muted">Пока некого показывать.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
-    {% endfor %}
-    {% else %}
-    <p class="muted">За период заявок не было.</p>
-    {% endif %}
-  </section>
-
-  <section class="panel">
-    <h2 style="margin-bottom:10px">Рекламные кампании</h2>
-    <table>
-      <thead>
-        <tr><th>Источник</th><th>Кампания</th><th class="num">Заявок</th><th class="num">Сделок</th><th class="num">Выручка</th></tr>
-      </thead>
-      <tbody>
-        {% for source, campaign, count, deals, money in report.by_campaign %}
-        <tr>
-          <td>{{ source }}</td>
-          <td>{{ campaign }}</td>
-          <td class="num">{{ count }}</td>
-          <td class="num">{{ deals }}</td>
-          <td class="num">{{ '{:,.0f}'.format(money).replace(',', ' ') ~ ' ₽' if money else '—' }}</td>
-        </tr>
-        {% else %}
-        <tr><td colspan="5" class="muted">Заявок с UTM-метками за период не было. Метки приходят из ссылок рекламы: ?utm_source=yandex&amp;utm_campaign=…</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </section>
-
-  <section class="panel">
-    <h2 style="margin-bottom:10px">Кто ведёт</h2>
-    <table>
-      <thead>
-        <tr><th>Сотрудник</th><th class="num">Заявок</th><th class="num">Сумма</th></tr>
-      </thead>
-      <tbody>
-        {% for name, count, total in report.by_user %}
-        <tr>
-          <td>{{ name }}</td>
-          <td class="num">{{ count }}</td>
-          <td class="num">{{ '{:,.0f}'.format(total).replace(',', ' ') if total else '—' }}</td>
-        </tr>
-        {% else %}
-        <tr><td colspan="3" class="muted">Пока некого показывать.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </section>
+  </div>
 </main>
 {% endblock %}

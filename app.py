@@ -32,6 +32,7 @@ from fastapi import (
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, PlainTextResponse, RedirectResponse, Response
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field, ValidationError
 
@@ -146,6 +147,11 @@ if ALLOWED_ORIGINS:
 # Путь от файла, а не от рабочей папки: с относительным шаблоны терялись при запуске
 # uvicorn из любого другого каталога.
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templates"))
+app.mount(
+    "/static",
+    StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static")),
+    name="static",
+)
 templates.env.filters["msk"] = lambda moment: local(moment).strftime("%d.%m.%Y %H:%M")
 templates.env.globals["demo"] = demo.ENABLED
 

@@ -9,7 +9,7 @@ colors:
   violet-soft: "#ece8f8"
   carmine: "#b4283f"
   carmine-soft: "#f8e4e8"
-  gold: "#a8822a"
+  gold: "#86661d"
   gold-soft: "#f3ead2"
   paper: "#eef2ec"
   sheet: "#fafbf8"
@@ -17,7 +17,7 @@ colors:
   rule-strong: "#9fb0a6"
   ink: "#18241f"
   ink-2: "#3d4c46"
-  ink-3: "#66756f"
+  ink-3: "#5b6a64"
   engrave-dark: "#7fc2a9"
   engrave-soft-dark: "#1b3129"
   engrave-ink-dark: "#0c1a15"
@@ -34,6 +34,7 @@ colors:
   ink-dark: "#e6eee9"
   ink-2-dark: "#b9c7c0"
   ink-3-dark: "#8a9a93"
+  bar-dark: "#18302a"
 typography:
   denomination:
     fontFamily: "Old Standard, Times New Roman, serif"
@@ -200,7 +201,7 @@ CRM устроена как денежный знак: гравюрная зел
 - **Линия** (rule) и **жирная линия** (rule-strong): границы карточек, таблиц и колонок.
 - **Чернила** (ink, ink-2, ink-3): основной, второстепенный и вспомогательный текст.
 
-Тёмная тема переопределяет те же роли токенами с суффиксом `-dark` под `prefers-color-scheme: dark` и под `[data-theme="dark"]`: бумага становится ночной зеленью, гравюра и нить светлеют.
+Тёмная тема переопределяет те же роли токенами с суффиксом `-dark` под `prefers-color-scheme: dark` и под `[data-theme="dark"]`: бумага становится ночной зеленью, гравюра и нить светлеют. Верхняя панель и главный показатель отчёта в тёмной теме лежат на глубокой гравюре (bar-dark) со светлым текстом, а не на светлой зелени. Текст на фиолетовой кнопке в тёмной теме тёмный.
 
 ### Named Rules
 **The Violet Is The Machine Rule.** Фиолетовый появляется только там, где работал ИИ. Кнопка, ссылка или метка, которые сделал человек, фиолетовыми не бывают.
