@@ -13,7 +13,9 @@
   </style>
 </head>
 <body>
-  {% if demo %}
+  {% if static_copy %}
+  <p class="demo-strip">Копия демо для просмотра: клиенты выдуманы, изменения не сохраняются</p>
+  {% elif demo %}
   <p class="demo-strip">Демо-версия: клиенты и сделки выдуманы, всё сбрасывается каждую ночь</p>
   {% endif %}
   {% if not hide_nav %}
@@ -51,6 +53,18 @@
       clearTimeout(say.timer);
       say.timer = setTimeout(() => toast.classList.remove('on'), 2400);
     }
+
+    {% if static_copy %}
+    /* Копия на Pages: сервера за ней нет. Запись не уходит никуда, а человек видит почему. */
+    const readOnly = () => say('Это копия для просмотра — изменения не сохраняются');
+    document.addEventListener('submit', event => { event.preventDefault(); readOnly(); }, true);
+    document.addEventListener('click', event => {
+      if (event.target.closest('a[href="#live"]')) { event.preventDefault(); readOnly(); }
+    });
+    HTMLFormElement.prototype.submit = readOnly;
+    window.fetch = async () => { readOnly(); return new Response(null, { status: 204 }); };
+    window.WebSocket = function () {};
+    {% endif %}
 
     {% if not hide_nav %}
     /* Живое обновление: новая заявка и смена стадии доезжают до всех открытых вкладок.

@@ -1,11 +1,15 @@
 # Сайт с формой публикуется отдельно от сервиса: это статика, ей не нужен ни контейнер,
 # ни база. Один репозиторий, два адреса — страница на Pages, панель на Amvera.
+# Рядом в site/demo/ кладётся копия демо-панели только для просмотра (snapshot.py): она
+# собирается из текущих шаблонов, поэтому пересборка идёт на каждый пуш, а раз в неделю
+# ещё и по расписанию — иначе даты демо-заявок устаревают.
 name: Site
 
 on:
   push:
     branches: [main]
-    paths: ["site/**", ".github/workflows/pages.yml"]
+  schedule:
+    - cron: "0 3 * * 1"
   workflow_dispatch:
 
 permissions:
@@ -26,6 +30,12 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python snapshot.py
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
