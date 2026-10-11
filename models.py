@@ -351,3 +351,13 @@ class Attachment(Base):
         if self.size < 1024 * 1024:
             return f"{max(1, round(self.size / 1024))} КБ"
         return f"{self.size / 1024 / 1024:.1f} МБ".replace(".", ",")
+
+
+class Setting(Base):
+    """Настройка компании, которую владелец меняет из интерфейса: например, план продаж
+    на месяц. Ключ — значение, без отдельной колонки под каждую."""
+
+    __tablename__ = "settings"
+
+    key: Mapped[str] = mapped_column(String(40), primary_key=True)
+    value: Mapped[str] = mapped_column(String(200))

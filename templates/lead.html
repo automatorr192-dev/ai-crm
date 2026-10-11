@@ -38,34 +38,36 @@
     .draft-text { font-size: 14.5px; line-height: 1.6; white-space: pre-wrap; }
     .waiting { font-size: 13.5px; color: var(--ink-3); }
 
-    .known { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; font-size: 14px; margin-bottom: 14px; }
+    .known { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; font-size: 14px; }
     .known dt { color: var(--ink-3); }
-    .talk { display: flex; flex-direction: column; gap: 8px; max-height: 440px; overflow-y: auto; padding: 2px; }
-    .bubble { max-width: 84%; padding: 8px 12px; border-radius: 10px; font-size: 14px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
-    .bubble small { display: block; font-size: 11.5px; color: var(--ink-3); }
-    .bubble.client { align-self: flex-start; background: var(--paper); }
-    .bubble.agent { align-self: flex-end; background: var(--violet-soft); }
-    .bubble.agent small { color: var(--violet); }
-    .bubble.manager { align-self: flex-end; background: var(--engrave); color: var(--engrave-ink); }
-    .bubble.manager small { color: inherit; opacity: .8; }
-    .reply-form { margin-top: 14px; display: grid; gap: 8px; }
-    .reply-form .btn { justify-self: start; }
-    .tg-link { font-size: 13px; overflow-wrap: anywhere; color: var(--ink-2); margin-top: 4px; }
+    .by-ai-label { font-size: 12.5px; font-weight: 400; color: var(--violet); margin-left: 8px; }
+
+    .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    .tabs button { font: inherit; font-size: 13.5px; padding: 6px 13px; border-radius: 16px; border: 1px solid var(--rule); background: transparent; color: var(--ink-2); cursor: pointer; }
+    .tabs button[aria-selected="true"] { background: var(--ink); border-color: var(--ink); color: var(--sheet); font-weight: 550; }
+    .pane { display: grid; gap: 10px; }
+    .pane .btn { justify-self: start; }
+    .pane textarea { min-height: 88px; }
+    .upload { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .upload input[type=file] { flex: 1 1 220px; font-size: 13px; padding: 6px; }
+    .tg-link { font-size: 13px; overflow-wrap: anywhere; color: var(--ink-2); }
     .not-sent { font-size: 13.5px; margin-top: 10px; }
 
-    .file { display: flex; flex-direction: column; text-decoration: none; padding: 9px 0; border-top: 1px solid var(--rule); }
-    .file:first-of-type { border-top: 0; padding-top: 0; }
-    .file span { font-size: 14px; font-weight: 550; overflow-wrap: anywhere; }
-    .file small { font-size: 12.5px; color: var(--ink-3); }
-    .upload { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
-    .upload input[type=file] { flex: 1 1 220px; font-size: 13px; padding: 6px; }
-    .note-form { margin-bottom: 14px; }
-    .note-form .btn { margin-top: 8px; }
-    .note { border-top: 1px solid var(--rule); padding: 11px 0; }
-    .note:first-of-type { border-top: 0; }
-    .note-top { display: flex; gap: 8px; font-size: 12.5px; color: var(--ink-3); margin-bottom: 4px; }
-    .note-top b { color: var(--ink-2); font-weight: 600; }
-    .note-text { white-space: pre-wrap; font-size: 14px; overflow-wrap: anywhere; }
+    .feed-list { list-style: none; margin-top: 18px; border-top: 1px solid var(--rule-strong); }
+    .item { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 4px 12px; padding: 12px 0; border-bottom: 1px solid var(--rule); font-size: 14px; }
+    .item:last-child { border-bottom: 0; }
+    .item time { font-size: 12.5px; color: var(--ink-3); padding-top: 1px; }
+    .item .who { color: var(--ink-3); font-size: 13px; }
+    .item .who b { color: var(--ink); font-weight: 600; }
+    .item .body { margin-top: 4px; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; }
+    .item.client .body, .item.agent .body, .item.manager .body { padding: 8px 12px; border-radius: 10px; max-width: 90%; }
+    .item.client .body { background: var(--paper); }
+    .item.agent .who b, .item .who.by-ai b { color: var(--violet); }
+    .item.agent .body { background: var(--violet-soft); }
+    .item.manager .body { background: var(--engrave-soft); }
+    .item.file a { font-weight: 550; overflow-wrap: anywhere; }
+    .item.event { padding: 7px 0; font-size: 13px; color: var(--ink-3); }
+    .item.event .by-ai { color: var(--violet); }
 
     .field-row { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 8px 12px; align-items: center; margin-bottom: 12px; }
     .field-row form { display: flex; gap: 8px; align-items: center; min-width: 0; }
@@ -76,10 +78,6 @@
 
     .other { display: block; text-decoration: none; font-size: 13.5px; padding: 8px 0; border-top: 1px solid var(--rule); color: var(--ink-2); }
     .other span { color: var(--ink-3); font-size: 12.5px; }
-    .history { list-style: none; display: grid; gap: 8px; font-size: 13.5px; }
-    .history li { display: grid; grid-template-columns: 92px 1fr; gap: 8px; color: var(--ink-2); }
-    .history time { color: var(--ink-3); }
-    .history .by-ai { color: var(--violet); }
 
     @media (max-width: 760px) {
       .deal-head h1 { font-size: 30px; }
@@ -90,6 +88,8 @@
       .stages button:nth-last-child(-n+2) { border-bottom: 0; }
       .grid2 { grid-template-columns: minmax(0, 1fr); }
       .field-row { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+      .item { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+      .item.client .body, .item.agent .body, .item.manager .body { max-width: 100%; }
     }
 {% endblock %}
 
@@ -171,74 +171,73 @@
       {% endif %}
 
       <section class="panel" id="talk">
-        <h2>Разговор с клиентом</h2>
-        {% set labels = {'task': 'Задача', 'business': 'Бизнес', 'deadline': 'Срок', 'budget': 'Бюджет', 'call': 'Созвон'} %}
-        {% if known %}
-        <dl class="known">
-          {% for key, label in labels.items() if known.get(key) %}
-          <dt>{{ label }}</dt><dd>{{ known[key] }}</dd>
-          {% endfor %}
-        </dl>
-        {% endif %}
-
-        {% if talk %}
-        <div class="talk">
-          {% for m in talk %}
-          <p class="bubble {{ m.role }}"><small>{{ {'client': lead.title, 'agent': 'Ассистент', 'manager': 'Менеджер'}[m.role] }}</small>{{ m.text }}</p>
-          {% endfor %}
+        <h2>Лента</h2>
+        {% if me.can_edit %}
+        <div class="tabs" role="tablist" aria-label="Что добавить в ленту">
+          <button type="button" role="tab" aria-selected="true" aria-controls="pane-note" data-tab="pane-note">Комментарий</button>
+          <button type="button" role="tab" aria-selected="false" aria-controls="pane-reply" data-tab="pane-reply">Ответ в Telegram</button>
+          <button type="button" role="tab" aria-selected="false" aria-controls="pane-file" data-tab="pane-file">Файл</button>
         </div>
-        {% elif tg_link %}
-        <p class="muted">Клиент ещё не перешёл в Telegram. Ссылка, по которой ассистент продолжит разговор:</p>
-        <p class="tg-link">{{ tg_link }}</p>
-        {% else %}
-        <p class="muted">Ассистент выключен: для него нужны TG_BOT_TOKEN и TG_BOT_USERNAME.</p>
-        {% endif %}
-
-        {% if sent == '0' %}<p class="overdue not-sent">Сообщение сохранено, но в Telegram не ушло: клиент ещё не открыл чат с ботом.</p>{% endif %}
-
-        {% if me.can_edit and lead.chat_id %}
-        <form class="reply-form" method="post" action="/leads/{{ lead.id }}/message">
-          <label for="reply" class="muted">Ответить клиенту в Telegram. После этого ассистент замолкает.</label>
-          <textarea id="reply" name="text" required maxlength="4000">{{ lead.draft_reply or '' }}</textarea>
-          <button class="btn primary">Отправить</button>
-        </form>
-        {% endif %}
-      </section>
-
-      <section class="panel">
-        <h2>Файлы</h2>
-        {% for item in lead.attachments %}
-        <a class="file" href="/files/{{ item.id }}">
-          <span>{{ item.name }}</span>
-          <small>{{ item.size_text }} · {{ item.author.name if item.author else 'кто-то' }} · {{ item.created_at | msk }}</small>
-        </a>
-        {% else %}
-        <p class="muted">Смета, договор, фото объекта — всё, что относится к сделке.</p>
-        {% endfor %}
-        {% if me.can_edit %}
-        <form class="upload" method="post" action="/leads/{{ lead.id }}/files" enctype="multipart/form-data">
-          <input type="file" name="file" required>
-          <button class="btn">Прикрепить</button>
-        </form>
-        {% endif %}
-      </section>
-
-      <section class="panel">
-        <h2>Комментарии</h2>
-        {% if me.can_edit %}
-        <form class="note-form" method="post" action="/leads/{{ lead.id }}/note">
+        <form class="pane" id="pane-note" role="tabpanel" method="post" action="/leads/{{ lead.id }}/note">
           <textarea name="text" required aria-label="Комментарий" placeholder="Созвонились, ждёт смету до пятницы"></textarea>
           <button class="btn primary">Добавить</button>
         </form>
-        {% endif %}
-        {% for note in lead.notes %}
-        <div class="note">
-          <div class="note-top"><b>{{ note.author.name if note.author else 'кто-то' }}</b><time>{{ note.created_local }}</time></div>
-          <p class="note-text">{{ note.text }}</p>
+        <div class="pane" id="pane-reply" role="tabpanel">
+          {% if lead.chat_id %}
+          <form class="pane" method="post" action="/leads/{{ lead.id }}/message">
+            <textarea name="text" required maxlength="4000" aria-label="Ответ клиенту">{{ lead.draft_reply or '' }}</textarea>
+            <p class="muted">Уйдёт клиенту в Telegram. После этого ассистент замолкает.</p>
+            <button class="btn primary">Отправить</button>
+          </form>
+          {% elif tg_link %}
+          <p class="muted">Клиент ещё не перешёл в Telegram. Ссылка, по которой ассистент продолжит разговор:</p>
+          <p class="tg-link">{{ tg_link }}</p>
+          {% else %}
+          <p class="muted">Ассистент выключен: для него нужны TG_BOT_TOKEN и TG_BOT_USERNAME.</p>
+          {% endif %}
         </div>
-        {% else %}
-        <p class="muted">Пока никто ничего не записал.</p>
-        {% endfor %}
+        <form class="pane upload" id="pane-file" role="tabpanel" method="post" action="/leads/{{ lead.id }}/files" enctype="multipart/form-data">
+          <input type="file" name="file" required aria-label="Файл к сделке">
+          <button class="btn">Прикрепить</button>
+        </form>
+        {% endif %}
+        {% if sent == '0' %}<p class="overdue not-sent">Сообщение сохранено, но в Telegram не ушло: клиент ещё не открыл чат с ботом.</p>{% endif %}
+
+        <ol class="feed-list">
+          {% for item in feed %}
+          {% if item.kind == 'event' %}
+          {% set event = item.event %}
+          <li class="item event">
+            <time>{{ item.at.strftime('%d.%m %H:%M') }}</time>
+            <span{% if event.kind == 'marked' %} class="by-ai"{% endif %}>
+              {{ event_ru.get(event.kind, event.kind) }}{% if event.note %} · {% if event.kind == 'stage' and event.note in stage_ru %}{{ stage_ru[event.note] }}{% elif event.kind == 'marked' %}{{ urgency_ru.get(event.note, event.note) }}{% elif event.kind == 'amount' and event.note.isdigit() %}{{ '{:,}'.format(event.note | int).replace(',', ' ') }} ₽{% else %}{{ event.note }}{% endif %}{% endif %}
+              {% if item.author %} ({{ item.author.name }}){% endif %}
+            </span>
+          </li>
+          {% else %}
+          <li class="item {{ item.kind }}">
+            <time>{{ item.at.strftime('%d.%m %H:%M') }}</time>
+            <div>
+              {% if item.kind == 'note' and not item.author and item.text.startswith('Ассистент: ') %}
+              <p class="who by-ai"><b>Ассистент</b> · итог разговора</p>
+              <p class="body">{{ item.text[11:] }}</p>
+              {% elif item.kind == 'note' %}
+              <p class="who"><b>{{ item.author.name if item.author else 'Кто-то' }}</b> · комментарий</p>
+              <p class="body">{{ item.text }}</p>
+              {% elif item.kind == 'file' %}
+              <p class="who"><b>{{ item.author.name if item.author else 'Кто-то' }}</b> · файл</p>
+              <p class="body"><a href="/files/{{ item.file.id }}">{{ item.file.name }}</a> <span class="muted">{{ item.file.size_text }}</span></p>
+              {% else %}
+              <p class="who"><b>{{ {'client': lead.title, 'agent': 'Ассистент', 'manager': 'Менеджер'}[item.kind] }}</b> · в Telegram</p>
+              <p class="body">{{ item.text }}</p>
+              {% endif %}
+            </div>
+          </li>
+          {% endif %}
+          {% else %}
+          <li class="item"><span></span><p class="muted">Пока ничего не происходило.</p></li>
+          {% endfor %}
+        </ol>
       </section>
     </div>
 
@@ -299,20 +298,17 @@
       </section>
       {% endif %}
 
+      {% set labels = {'task': 'Задача', 'business': 'Бизнес', 'deadline': 'Срок', 'budget': 'Бюджет', 'call': 'Созвон'} %}
+      {% if known %}
       <section class="panel">
-        <h2>История</h2>
-        <ul class="history">
-          {% for event in lead.events %}
-          <li>
-            <time>{{ event.created_local }}</time>
-            <span{% if event.kind == 'marked' %} class="by-ai"{% endif %}>
-              {{ event_ru.get(event.kind, event.kind) }}{% if event.note %} · {{ stage_ru.get(event.note) if event.kind == 'stage' and event.note in stage_ru else urgency_ru.get(event.note, event.note) if event.kind == 'marked' else event.note }}{% endif %}
-              {% if event.author %} ({{ event.author.name }}){% endif %}
-            </span>
-          </li>
+        <h2>Что известно<span class="by-ai-label">собрал ассистент</span></h2>
+        <dl class="known">
+          {% for key, label in labels.items() if known.get(key) %}
+          <dt>{{ label }}</dt><dd>{{ known[key] }}</dd>
           {% endfor %}
-        </ul>
+        </dl>
       </section>
+      {% endif %}
     </aside>
   </div>
 </main>
@@ -356,6 +352,18 @@
       contact.removeAttribute('href');
     }
   }
+
+  /* Вкладки ленты: без JS видны все три формы сразу, и это рабочий вид, а не поломка. */
+  const tabs = document.querySelectorAll('[data-tab]');
+  function showTab(active) {
+    tabs.forEach(tab => {
+      const on = tab === active;
+      tab.setAttribute('aria-selected', String(on));
+      document.getElementById(tab.dataset.tab).hidden = !on;
+    });
+  }
+  tabs.forEach(tab => tab.addEventListener('click', () => showTab(tab)));
+  if (tabs.length) showTab(location.search.includes('sent=') ? tabs[1] : tabs[0]);
 
   const copy = document.getElementById('copy');
   if (copy) {

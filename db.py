@@ -21,12 +21,14 @@ from sqlalchemy.orm import selectinload
 from auth import hash_password
 from models import (
     CLOSED_STAGES,
+    MSK,
     Attachment,
     Contact,
     Lead,
     LeadEvent,
     Message,
     Note,
+    Setting,
     User,
     local,
 )
@@ -729,12 +731,15 @@ async def mark_hot(lead_id: int, summary: str) -> Lead | None:
 # --- отчёт ---------------------------------------------------------------------
 
 
-async def report(days: int = 30, viewer: User | None = None) -> dict:
+async def report(days: int = 30, viewer: User | None = None, offset: int = 0) -> dict:
     """Цифры, ради которых CRM вообще заводят: сколько пришло, сколько дошло до денег,
-    где встало и как быстро отвечаем."""
-    since = datetime.now(UTC) - timedelta(days=days)
+    где встало и как быстро отвечаем. offset=1 — тот же отрезок, но перед текущим: с ним
+    сравнивают, иначе «22 заявки» не говорят, хорошо это или плохо."""
+    until = datetime.now(UTC) - timedelta(days=days * offset)
+    since = until - timedelta(days=days)
+    window = (Lead.created_at >= since) & (Lead.created_at < until)
     scope = _mine(viewer)
-    period = Lead.created_at >= since if scope is None else (Lead.created_at >= since) & scope
+    period = window if scope is None else window & scope
 
     async with Session() as session:
         by_stage = {
@@ -822,3 +827,42 @@ async def report(days: int = 30, viewer: User | None = None) -> dict:
         "answer_minutes": round(sum(waits) / len(waits) / 60) if waits else None,
         "answered_count": len(waits),
     }
+
+
+async def won_this_month(viewer: User | None = None) -> Decimal:
+    """Выручка с начала месяца по Москве. Считаем по переходу в «Сделку», а не по дате
+    заявки: клиент мог написать ещё в прошлом месяце, а заплатить в этом."""
+    start = (
+        datetime.now(MSK).replace(day=1, hour=0, minute=0, second=0, microsecond=0).astimezone(UTC)
+    )
+    won_now = select(LeadEvent.lead_id).where(
+        LeadEvent.kind == "stage", LeadEvent.note == "won", LeadEvent.created_at >= start
+    )
+    query = select(func.sum(Lead.amount)).where(Lead.stage == "won", Lead.id.in_(won_now))
+    if (scope := _mine(viewer)) is not None:
+        query = query.where(scope)
+    async with Session() as session:
+        return Decimal((await session.execute(query)).scalar_one() or 0)
+
+
+# --- настройки -----------------------------------------------------------------
+
+
+async def get_setting(key: str) -> str | None:
+    async with Session() as session:
+        row = await session.get(Setting, key)
+        return row.value if row else None
+
+
+async def set_setting(key: str, value: str | None) -> None:
+    """None — убрать настройку совсем, а не хранить пустую строку."""
+    async with Session() as session:
+        row = await session.get(Setting, key)
+        if value is None:
+            if row is not None:
+                await session.delete(row)
+        elif row is None:
+            session.add(Setting(key=key, value=value))
+        else:
+            row.value = value
+        await session.commit()

@@ -17,6 +17,18 @@
     .kpi.lead b { font-size: 46px; position: relative; }
     .kpi.lead svg { position: absolute; right: -40px; top: -40px; width: 220px; height: 220px; opacity: .22; }
 
+    .kpi small.delta { color: var(--ink-2); }
+    .plan { margin-top: 22px; }
+    .plan-head { display: flex; align-items: baseline; gap: 10px 18px; flex-wrap: wrap; }
+    .plan-head h2 { margin: 0; }
+    .plan-figures { margin-left: auto; font-size: 14px; color: var(--ink-3); }
+    .plan-figures .money { font-size: 22px; color: var(--ink); }
+    .plan-bar { margin-top: 14px; height: 12px; border-radius: 6px; background: var(--gold-soft); overflow: hidden; }
+    .plan-bar i { display: block; height: 100%; background: var(--gold); border-radius: 6px; }
+    .plan-note { margin-top: 10px; font-size: 13px; color: var(--ink-3); }
+    .plan-form { margin-top: 14px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .plan-form label { margin: 0; }
+    .plan-form input { width: 160px; height: 40px; }
     .report-grid { margin-top: 22px; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 22px; align-items: start; }
     .panel h2 { margin-bottom: 14px; }
     .funnel { display: grid; gap: 10px; }
@@ -41,6 +53,12 @@
 {% endblock %}
 
 {% block body %}
+{% macro delta(now, then, unit='', more='больше', less='меньше') -%}
+  {%- set d = now - then -%}
+  {%- if d > 0 %}на {{ d }}{{ unit }} {{ more }}, чем за прошлые {{ days }} дней
+  {%- elif d < 0 %}на {{ -d }}{{ unit }} {{ less }}, чем за прошлые {{ days }} дней
+  {%- else %}как за прошлые {{ days }} дней{% endif -%}
+{%- endmacro %}
 <main class="wrap">
   <div class="head">
     <h1>Отчёт за {{ days }} дней</h1>
@@ -59,8 +77,8 @@
       <b class="money">{{ '{:,.0f}'.format(report.in_work_amount).replace(',', ' ') }} ₽</b>
       <small>сумма незакрытых сделок</small>
     </div>
-    <div class="kpi"><span>Заявок</span><b class="money">{{ report.total }}</b><small>за {{ days }} дней</small></div>
-    <div class="kpi"><span>Дошли до сделки</span><b class="money">{{ report.conversion }}%</b><small>от всех заявок за период</small></div>
+    <div class="kpi"><span>Заявок</span><b class="money">{{ report.total }}</b><small class="delta">{% if before.total %}{{ delta(report.total, before.total) }}{% else %}в прошлые {{ days }} дней заявок не было{% endif %}</small></div>
+    <div class="kpi"><span>Дошли до сделки</span><b class="money">{{ report.conversion }}%</b>{% if before.total %}<small class="delta">{{ delta(report.conversion, before.conversion, ' п. п.', 'выше', 'ниже') }}</small>{% else %}<small>от всех заявок за период</small>{% endif %}</div>
     <div class="kpi">
       <span>До первого ответа</span>
       {% if report.answer_minutes is not none %}
@@ -70,6 +88,7 @@
         {%- elif report.answer_minutes < 1 %}меньше минуты
         {%- else %}{{ report.answer_minutes }} мин{% endif -%}
       </b>
+      {% if before.answer_minutes is not none %}<small class="delta">{{ delta(report.answer_minutes, before.answer_minutes, ' мин', 'медленнее', 'быстрее') }}</small>{% endif %}
       <small>по {{ report.answered_count }} заявкам, где человек уже ответил</small>
       {% else %}
       <b class="money">—</b>
@@ -77,6 +96,31 @@
       {% endif %}
     </div>
   </div>
+
+  {% if goal or me.role == 'admin' %}
+  <section class="panel plan" aria-labelledby="plan-title">
+    <div class="plan-head">
+      <h2 id="plan-title">План на {{ month_name }}</h2>
+      {% if goal %}
+      {% set pct = (month_won / goal * 100) | round | int %}
+      <p class="plan-figures"><span class="money">{{ '{:,.0f}'.format(month_won).replace(',', ' ') }} ₽</span> из <span class="money">{{ '{:,.0f}'.format(goal).replace(',', ' ') }} ₽</span> · {{ pct }}%</p>
+      {% endif %}
+    </div>
+    {% if goal %}
+    <div class="plan-bar"><i style="width: {{ [pct, 100] | min }}%"></i></div>
+    <p class="plan-note">Считаются сделки, которые перешли в «Сделку» с первого числа месяца.</p>
+    {% else %}
+    <p class="plan-note">Задайте план продаж на месяц, и здесь будет видно, сколько уже закрыто от цели.</p>
+    {% endif %}
+    {% if me.role == 'admin' %}
+    <form class="plan-form" method="post" action="/report/goal">
+      <label for="goal">План, ₽</label>
+      <input id="goal" name="goal" inputmode="numeric" value="{{ goal or '' }}" placeholder="например 600000">
+      <button class="btn">Сохранить</button>
+    </form>
+    {% endif %}
+  </section>
+  {% endif %}
 
   <div class="report-grid">
     <div>

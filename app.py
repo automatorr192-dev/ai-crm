@@ -76,6 +76,23 @@ EVENT_RU = {
     "sync_failed": "не ушла во внешнюю CRM",
     "file": "файл",
 }
+MONTHS_RU = (
+    "январь",
+    "февраль",
+    "март",
+    "апрель",
+    "май",
+    "июнь",
+    "июль",
+    "август",
+    "сентябрь",
+    "октябрь",
+    "ноябрь",
+    "декабрь",
+)
+GOAL_KEY = "month_goal"
+# Комментарий и файл уже стоят в ленте целиком, их строка из журнала была бы повтором.
+FEED_SKIP = ("note", "file")
 MAX_FILE_BYTES = int(os.environ.get("MAX_FILE_MB", 10)) * 1024 * 1024
 COMPANY = {
     "name": os.environ.get("COMPANY_NAME") or "Студия автоматизации",
@@ -480,6 +497,7 @@ async def create_lead(
 @app.get("/leads/{lead_id}")
 async def lead_card(request: Request, lead_id: int, user: User = Depends(current_user)):
     lead = await visible_lead(lead_id, user, full=True)
+    talk = await db.messages(lead_id, limit=200)
     return templates.TemplateResponse(
         request,
         "lead.html",
@@ -487,12 +505,36 @@ async def lead_card(request: Request, lead_id: int, user: User = Depends(current
             user,
             lead=lead,
             people=await db.all_users(),
-            talk=await db.messages(lead_id, limit=200),
+            feed=feed(lead, talk),
             known=db.qualification(lead),
             tg_link=tgbot.start_link(lead_id),
             sent=request.query_params.get("sent"),
         ),
     )
+
+
+def feed(lead, talk) -> list[dict]:
+    """Всё, что случилось со сделкой, одной лентой от свежего к старому: комментарии,
+    переписка, файлы и события. Менеджеру не нужно собирать картину из четырёх панелей."""
+    items = [
+        {"kind": "note", "at": note.created_at, "author": note.author, "text": note.text}
+        for note in lead.notes
+    ]
+    items += [
+        {"kind": message.role, "at": message.created_at, "text": message.text} for message in talk
+    ]
+    items += [
+        {"kind": "file", "at": item.created_at, "author": item.author, "file": item}
+        for item in lead.attachments
+    ]
+    items += [
+        {"kind": "event", "at": event.created_at, "author": event.author, "event": event}
+        for event in lead.events
+        if event.kind not in FEED_SKIP
+    ]
+    for item in items:
+        item["at"] = local(item["at"])
+    return sorted(items, key=lambda item: item["at"], reverse=True)
 
 
 def _back(request: Request, lead_id: int) -> RedirectResponse:
@@ -696,9 +738,29 @@ async def contact_note(
 
 @app.get("/report")
 async def report(request: Request, days: int = 30, user: User = Depends(current_user)):
+    goal = await db.get_setting(GOAL_KEY)
     return templates.TemplateResponse(
-        request, "report.html", _shell(user, report=await db.report(days, viewer=user), days=days)
+        request,
+        "report.html",
+        _shell(
+            user,
+            report=await db.report(days, viewer=user),
+            before=await db.report(days, viewer=user, offset=1),
+            goal=int(goal) if goal else None,
+            month_won=await db.won_this_month(viewer=user),
+            month_name=MONTHS_RU[local(None).month - 1],
+            days=days,
+        ),
     )
+
+
+@app.post("/report/goal")
+async def set_goal(goal: str = Form(""), user: User = Depends(current_user)):
+    if user.role != "admin":
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "План на месяц задаёт владелец")
+    digits = "".join(ch for ch in goal if ch.isdigit())
+    await db.set_setting(GOAL_KEY, digits if digits and int(digits) > 0 else None)
+    return RedirectResponse("/report", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @app.get("/backup")

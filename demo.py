@@ -9,7 +9,7 @@ from sqlalchemy import delete, func, select
 
 import db
 from auth import hash_password
-from models import Attachment, Contact, Lead, LeadEvent, Message, Note, User, seconds_until
+from models import Attachment, Contact, Lead, LeadEvent, Message, Note, Setting, User, seconds_until
 from observability import log
 
 ENABLED = os.environ.get("DEMO_MODE", "") == "1"
@@ -589,6 +589,7 @@ async def seed() -> int:
                     )
                 )
 
+        session.add(Setting(key="month_goal", value="300000"))
         await session.commit()
     log.info("demo.seeded", leads=len(LEADS))
     return len(LEADS)
@@ -596,7 +597,7 @@ async def seed() -> int:
 
 async def reset() -> int:
     async with db.Session() as session:
-        for model in (Attachment, Message, Note, LeadEvent, Lead, Contact):
+        for model in (Attachment, Message, Note, LeadEvent, Lead, Contact, Setting):
             await session.execute(delete(model))
         await session.execute(delete(User).where(User.login.like("demo-%")))
         await session.commit()
