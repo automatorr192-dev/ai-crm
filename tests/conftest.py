@@ -81,5 +81,6 @@ async def watcher(database):
 def no_ai(monkeypatch):
     """Ни один тест не должен ходить в модель за деньги."""
     monkeypatch.setattr(app_module, "enrich", lambda lead_id, announce=True: asyncio.sleep(0))
+    monkeypatch.setattr(app_module, "suggest", lambda lead_id: asyncio.sleep(0, result=False))
     monkeypatch.setattr(app_module, "_seen", {})
     monkeypatch.setattr(app_module, "_failures", {})

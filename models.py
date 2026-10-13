@@ -214,6 +214,9 @@ class Lead(Base):
     # Что ассистент выяснил: задача, ниша, срок, бюджет. JSON строкой, а не отдельными
     # колонками: набор полей меняется вместе с промптом, и миграция на каждое — лишнее.
     qualification: Mapped[str | None] = mapped_column(Text)
+    # Подсказка модели: сообщение клиенту, почему именно оно и через сколько дней напомнить.
+    # Не событие: подсказка не движение по сделке и не должна сбрасывать «без движения».
+    next_step: Mapped[str | None] = mapped_column(Text)
 
     utm_source: Mapped[str | None] = mapped_column(String(120), index=True)
     utm_medium: Mapped[str | None] = mapped_column(String(120))

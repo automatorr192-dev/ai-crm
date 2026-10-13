@@ -46,9 +46,9 @@ import notify
 import outbound
 import tgbot
 import webhook
-from ai import analyze_lead
+from ai import analyze_lead, suggest_next
 from hub import hub
-from models import MSK, STAGES, URGENCIES, User, local
+from models import CLOSED_STAGES, MSK, STAGES, URGENCIES, User, local
 from observability import log, setup
 
 load_dotenv()
@@ -111,6 +111,14 @@ COMPANY = {
 }
 OFFER_DAYS = int(os.environ.get("OFFER_DAYS") or 14)
 SOURCES_MANUAL = ("звонок", "почта", "мессенджер", "встреча", "рекомендация", "другое")
+KNOWN_RU = {
+    "task": "задача",
+    "business": "бизнес",
+    "deadline": "срок",
+    "budget": "бюджет",
+    "call": "созвон",
+}
+ROLE_RU = {"client": "клиент", "agent": "ассистент", "manager": "менеджер"}
 
 
 def migrate() -> None:
@@ -509,6 +517,8 @@ async def lead_card(request: Request, lead_id: int, user: User = Depends(current
             known=db.qualification(lead),
             tg_link=tgbot.start_link(lead_id),
             sent=request.query_params.get("sent"),
+            step=db.next_step(lead),
+            next_failed=request.query_params.get("next") == "0",
         ),
     )
 
@@ -573,6 +583,11 @@ async def change_stage(
     lead = await db.set_stage(lead_id, stage, user.id, lost_reason.strip() or None)
     if lead is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Заявка не найдена")
+    # Новая стадия — новый следующий шаг. У закрытой сделки шага нет.
+    if lead.stage in CLOSED_STAGES:
+        await db.set_next_step(lead_id, None)
+    else:
+        asyncio.create_task(suggest(lead_id))
     await hub.send("lead.stage", card(await db.get_lead(lead_id, full=True)))
     if request.headers.get("accept", "").startswith("application/json"):
         return {"ok": True, "stage": lead.stage}
@@ -680,18 +695,45 @@ async def download_file(attachment_id: int, user: User = Depends(current_user)):
 # --- клиенты -------------------------------------------------------------------
 
 
+def remind_at(days: int, now: datetime | None = None) -> datetime:
+    """Через столько-то дней в 10 утра по Москве; выпало на выходные — в понедельник."""
+    moment = (now or datetime.now(MSK)).astimezone(MSK) + timedelta(days=days)
+    moment = moment.replace(hour=10, minute=0, second=0, microsecond=0)
+    while moment.weekday() >= 5:
+        moment += timedelta(days=1)
+    return moment
+
+
+@app.post("/leads/{lead_id}/next")
+async def next_step(lead_id: int, user: User = Depends(editor)):
+    await visible_lead(lead_id, user)
+    done = await suggest(lead_id)
+    return RedirectResponse(
+        f"/leads/{lead_id}" + ("" if done else "?next=0"), status.HTTP_303_SEE_OTHER
+    )
+
+
 @app.post("/leads/{lead_id}/message")
 async def message_client(
-    request: Request, lead_id: int, text: str = Form(...), user: User = Depends(editor)
+    request: Request,
+    lead_id: int,
+    text: str = Form(...),
+    remind_days: str = Form(""),
+    user: User = Depends(editor),
 ):
     """Ответ менеджера клиенту в Telegram. Ассистент в разговор больше не вмешивается:
-    раз человек написал сам, лид у него."""
+    раз человек написал сам, лид у него. Вместе с ответом ставится напоминание: если
+    клиент промолчит, сделка всплывёт сама, а не потеряется в списке."""
     lead = await visible_lead(lead_id, user)
     text = text.strip()
     if not text:
         return _back(request, lead_id)
     await db.add_message(lead_id, "manager", text)
     await db.save_qualification(lead_id, {"handoff": "manager"})
+    days = min(int(remind_days), 30) if remind_days.strip().isdigit() else 0
+    if days:
+        await db.set_due(lead_id, remind_at(days).astimezone(UTC), user.id)
+    await db.set_next_step(lead_id, None)
     delivered = bool(lead.chat_id) and await tgbot.send(lead.chat_id, text)
     log.info("lead.manager_message", lead_id=lead_id, delivered=delivered)
     return RedirectResponse(
@@ -1002,6 +1044,50 @@ async def enrich(lead_id: int, announce: bool = True) -> None:
         await db.mark_failed(lead_id, str(e))
         await hub.send("lead.failed", {"id": lead_id})
     await deliver(lead_id, announce)
+
+
+def deal_context(lead, talk, now: datetime | None = None) -> str:
+    """Сделка текстом для модели: то, на что смотрит менеджер, когда решает, что дальше."""
+    now = now or datetime.now(UTC)
+    moments = [item.created_at for item in [*lead.events, *talk]]
+    moments = [m if m.tzinfo else m.replace(tzinfo=UTC) for m in moments]
+    lines = [f"Стадия: {STAGE_RU[lead.stage]}"]
+    if lead.topic:
+        lines.append(f"Тема: {lead.topic}")
+    if lead.amount is not None:
+        lines.append(f"Сумма: {lead.amount:,.0f} ₽".replace(",", " "))
+    if moments:
+        lines.append(f"Последнее движение: {(now - max(moments)).days} дн. назад")
+    known = db.qualification(lead)
+    facts = [f"{label} — {known[key]}" for key, label in KNOWN_RU.items() if known.get(key)]
+    if facts:
+        lines.append("Выяснено: " + "; ".join(facts))
+    lines += ["", "Заявка:", lead.text]
+    if talk:
+        lines += ["", "Переписка, старое сверху:"]
+        lines += [f"{ROLE_RU.get(m.role, m.role)}: {m.text}" for m in talk[-12:]]
+    notes = sorted(lead.notes, key=lambda note: note.created_at)[-5:]
+    if notes:
+        lines += ["", "Комментарии команды, старое сверху:"]
+        lines += [f"{n.author.name}: {n.text}" if n.author else n.text for n in notes]
+    return "\n".join(lines)
+
+
+async def suggest(lead_id: int) -> bool:
+    """Следующий шаг по сделке. Модель не ответила — подсказки нет, сделка от этого не
+    страдает: менеджер пишет сам, как писал бы без ИИ."""
+    lead = await db.get_lead(lead_id, full=True)
+    if lead is None or lead.stage in CLOSED_STAGES:
+        return False
+    try:
+        context = deal_context(lead, await db.messages(lead_id))
+        step = await asyncio.to_thread(suggest_next, context)
+    except Exception:
+        log.exception("lead.next_failed", lead_id=lead_id)
+        return False
+    await db.set_next_step(lead_id, step.model_dump())
+    log.info("lead.next", lead_id=lead_id, remind_in_days=step.remind_in_days)
+    return True
 
 
 async def deliver(lead_id: int, announce: bool = True) -> None:

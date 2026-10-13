@@ -685,6 +685,22 @@ def qualification(lead: Lead) -> dict:
         return {}
 
 
+def next_step(lead: Lead) -> dict:
+    try:
+        return json.loads(lead.next_step) if lead.next_step else {}
+    except ValueError:
+        return {}
+
+
+async def set_next_step(lead_id: int, step: dict | None) -> None:
+    async with Session() as session:
+        lead = await session.get(Lead, lead_id)
+        if lead is None:
+            return
+        lead.next_step = json.dumps(step, ensure_ascii=False) if step else None
+        await session.commit()
+
+
 async def save_qualification(lead_id: int, fields: dict) -> dict:
     """Дописать выясненное. Пустые значения не затирают уже известное: модель, не
     услышав про бюджет в этой реплике, не должна стирать бюджет из прошлой."""
