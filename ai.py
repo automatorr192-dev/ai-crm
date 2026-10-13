@@ -151,6 +151,7 @@ def _ask(system: str, content: str, schema: type[T]) -> tuple[T, dict]:
                     {"role": "user", "content": content},
                 ],
                 response_format={"type": "json_object"},
+                max_tokens=1024,
                 extra_body={"usage": {"include": True}},
             )
             usage = response.usage

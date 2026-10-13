@@ -30,6 +30,10 @@
         <a href="/team" {% if request.url.path == '/team' %}aria-current="page"{% endif %}>Команда</a>
         {% if me.role == 'admin' %}<a href="/log" {% if request.url.path == '/log' %}aria-current="page"{% endif %}>Журнал</a>{% endif %}
       </nav>
+      <form class="ask" method="get" action="/ask" role="search">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="m11 11 3.5 3.5"/></svg>
+        <input type="search" name="q" maxlength="300" required aria-label="Спросить CRM" placeholder="Спросите CRM: какая реклама окупается?">
+      </form>
       <div class="me">
         <span class="conn" id="conn" title="живое обновление"><i aria-hidden="true"></i></span>
         <i aria-hidden="true">{{ ((me.name.split() | map('first') | join)[:2]) | upper }}</i>

@@ -22,6 +22,9 @@ from observability import log
 # базу часовых поясов, которой нет в Windows без пакета tzdata.
 MSK = timezone(timedelta(hours=3), "MSK")
 MAX_STEPS = 6
+# Потолок ответа. Без него OpenRouter резервирует под ответ до 64 тысяч токенов, и при
+# небольшом балансе запрос отклоняется целиком, хотя реальный ответ — пара предложений.
+MAX_TOKENS = 1024
 FIELDS = ("task", "business", "deadline", "budget")
 # Созвоны по будням, слотами по часу. Начало слота — по Москве.
 CALL_HOURS = tuple(range(10, 18))
@@ -215,7 +218,7 @@ class Tools:
         return {"ok": True}
 
 
-def _complete(messages: list[dict]):
+def _complete(messages: list[dict], tools: list[dict] = TOOLS):
     """Один ход модели. Модели идут по очереди: бесплатные и дешёвые часто отвечают 429."""
     last = "нет ответа"
     for model in AGENT_MODELS:
@@ -223,8 +226,9 @@ def _complete(messages: list[dict]):
             response = _get_client().chat.completions.create(
                 model=model,
                 messages=messages,
-                tools=TOOLS,
+                tools=tools,
                 tool_choice="auto",
+                max_tokens=MAX_TOKENS,
                 extra_body={"usage": {"include": True}},
             )
             usage = response.usage

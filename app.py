@@ -36,6 +36,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field, ValidationError
 
+import ask as asking
 import auth
 import backup
 import db
@@ -104,6 +105,16 @@ COMPANY = {
     ],
 }
 OFFER_DAYS = int(os.environ.get("OFFER_DAYS") or 14)
+# Каждый вопрос стоит денег, а в демо все входят одним пользователем: потолок на день.
+ASK_PER_DAY = int(os.environ.get("ASK_PER_DAY") or 50)
+ASK_EXAMPLES = (
+    "Какая реклама приносит деньги?",
+    "Какие сделки горят?",
+    "Кто из менеджеров отвечает быстрее?",
+    "Какой прогноз по открытым сделкам?",
+    "Из каких каналов больше выигранных сделок?",
+)
+_asked: dict[tuple[int, str], int] = {}
 SOURCES_MANUAL = ("звонок", "почта", "мессенджер", "встреча", "рекомендация", "другое")
 
 
@@ -792,6 +803,29 @@ async def set_goal(goal: str = Form(""), user: User = Depends(current_user)):
     digits = "".join(ch for ch in goal if ch.isdigit())
     await db.set_setting(GOAL_KEY, digits if digits and int(digits) > 0 else None)
     return RedirectResponse("/report", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@app.get("/ask")
+async def ask_page(request: Request, q: str = "", user: User = Depends(current_user)):
+    question = q.strip()[:300]
+    result = None
+    if question:
+        key = (user.id, f"{datetime.now(MSK):%Y-%m-%d}")
+        if _asked.get(key, 0) >= ASK_PER_DAY:
+            result = {
+                "answer": f"На сегодня вопросы закончились: {ASK_PER_DAY} в день.",
+                "table": None,
+            }
+        else:
+            _asked[key] = _asked.get(key, 0) + 1
+            try:
+                result = await asking.ask(question, user)
+            except Exception:
+                log.exception("ask.failed")
+                result = {"answer": asking.FALLBACK, "table": None}
+    return templates.TemplateResponse(
+        request, "ask.html", _shell(user, q=question, result=result, examples=ASK_EXAMPLES)
+    )
 
 
 @app.get("/backup")

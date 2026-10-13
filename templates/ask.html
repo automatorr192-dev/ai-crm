@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Спросить CRM{% endblock %}
+
+{% block styles %}
+    .ask-form { display: flex; gap: 10px; margin-top: 18px; max-width: 760px; }
+    .ask-form input { flex: 1; min-width: 0; }
+    .examples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; max-width: 760px; }
+    .asked { margin-top: 22px; max-width: 900px; border-color: color-mix(in srgb, var(--violet) 40%, var(--rule)); background: var(--violet-soft); }
+    .asked .q { font-size: 14px; color: var(--violet); font-weight: 600; }
+    .asked .a { font-size: 16px; line-height: 1.55; margin-top: 8px; }
+    .asked table { margin-top: 16px; background: var(--sheet); border-radius: 8px; }
+    .asked .how { font-size: 12.5px; color: var(--ink-3); margin-top: 10px; }
+    .scroll-x { overflow-x: auto; }
+{% endblock %}
+
+{% block body %}
+<main class="wrap">
+  <h1>Спросить CRM</h1>
+  <p class="muted">Вопрос словами — ответ цифрами. Модель выбирает запрос, цифры считает база с вашими правами доступа.</p>
+
+  <form class="ask-form" method="get" action="/ask" id="ask-page">
+    <input type="search" name="q" value="{{ q }}" maxlength="300" required aria-label="Вопрос" placeholder="Сколько принесла реклама за месяц?">
+    <button class="btn primary">Спросить</button>
+  </form>
+  <div class="examples">
+    {% for example in examples %}
+    <button class="chip-link" form="ask-page" name="q" value="{{ example }}" formnovalidate>{{ example }}</button>
+    {% endfor %}
+  </div>
+
+  {% if result %}
+  <section class="panel asked" aria-labelledby="asked-q">
+    <h2 class="q" id="asked-q">{{ q }}</h2>
+    <p class="a">{{ result.answer }}</p>
+    {% set table = result.table %}
+    {% if table and table.rows %}
+    <div class="scroll-x">
+      <table>
+        <thead><tr>{% for title, kind in table.columns %}<th{% if kind != 'text' %} class="num"{% endif %}>{{ title }}</th>{% endfor %}</tr></thead>
+        <tbody>
+          {% for row in table.rows %}
+          {% set row_index = loop.index0 %}
+          <tr>
+            {% for value in row %}
+            {% set kind = table.columns[loop.index0][1] %}
+            {% if kind == 'money' %}<td class="num">{% if value is not none %}<span class="money">{{ '{:,.0f}'.format(value).replace(',', ' ') }} ₽</span>{% else %}—{% endif %}</td>
+            {% elif kind == 'percent' %}<td class="num">{% if value is not none %}{{ value }}%{% else %}—{% endif %}</td>
+            {% elif kind == 'num' %}<td class="num">{{ value }}</td>
+            {% elif loop.first and table.ids %}<td><a href="/leads/{{ table.ids[row_index] }}">{{ value }}</a></td>
+            {% else %}<td>{{ value }}</td>{% endif %}
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="how">{{ table.how }} Цифры в таблице посчитала база, модель только выбрала запрос и написала вывод.</p>
+    {% endif %}
+  </section>
+  {% endif %}
+</main>
+{% endblock %}

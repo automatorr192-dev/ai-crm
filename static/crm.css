@@ -104,6 +104,13 @@ input, textarea { caret-color: var(--engrave); }
 .me { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 14px; white-space: nowrap; }
 .me i { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-weight: 600; font-size: 12.5px; background: var(--bar-ink); color: var(--bar); }
 .me form { display: flex; }
+.ask { margin-left: auto; position: relative; flex: 0 1 360px; }
+.ask + .me { margin-left: 0; }
+.ask input { width: 100%; height: 36px; border-radius: 18px; border: 1px solid rgba(255, 255, 255, .28); background: rgba(255, 255, 255, .1); color: inherit; padding: 0 14px 0 38px; font-size: 14px; }
+.ask input::placeholder { color: inherit; opacity: .7; }
+.ask input:focus { outline: none; background: var(--sheet); color: var(--ink); border-color: var(--sheet); }
+.ask svg { position: absolute; left: 13px; top: 10px; width: 16px; height: 16px; opacity: .8; pointer-events: none; }
+.ask:focus-within svg { color: var(--violet); opacity: 1; }
 .exit { font: inherit; font-size: 13.5px; background: none; border: 0; color: inherit; opacity: .78; cursor: pointer; padding: 6px 4px; }
 .conn { display: inline-flex; width: 18px; justify-content: center; }
 .conn i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .35; }
@@ -191,6 +198,7 @@ td .money { font-size: 16px; }
   .top-in { padding: 10px 14px; gap: 10px 12px; flex-wrap: wrap; }
   .sections { order: 3; width: 100%; overflow-x: auto; margin: 0 -6px; }
   .me > span:not(.conn) { display: none; }
+  .ask { order: 4; flex-basis: 100%; }
   .wrap { padding: 20px 14px 56px; }
   h1 { font-size: 28px; }
   .panel { padding: 16px; }

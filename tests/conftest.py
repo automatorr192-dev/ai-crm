@@ -14,6 +14,7 @@ from alembic.config import Config  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 import app as app_module  # noqa: E402
+import ask  # noqa: E402
 import db  # noqa: E402
 import insight  # noqa: E402
 
@@ -78,10 +79,16 @@ async def watcher(database):
     return await _sign_in("guest", "very-secret")
 
 
+def _no_model(*args, **kwargs):
+    raise AssertionError("тест пошёл в модель за деньги")
+
+
 @pytest.fixture(autouse=True)
 def no_ai(monkeypatch):
     """Ни один тест не должен ходить в модель за деньги."""
     monkeypatch.setattr(app_module, "enrich", lambda lead_id, announce=True: asyncio.sleep(0))
     monkeypatch.setattr(insight, "rethink", lambda lead_id: asyncio.sleep(0))
+    monkeypatch.setattr(ask, "_complete", _no_model)
+    monkeypatch.setattr(app_module, "_asked", {})
     monkeypatch.setattr(app_module, "_seen", {})
     monkeypatch.setattr(app_module, "_failures", {})
