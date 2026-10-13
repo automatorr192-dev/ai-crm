@@ -37,8 +37,11 @@ async def database(tmp_path, monkeypatch):
 
     from sqlalchemy import text
     from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+    from sqlalchemy.pool import NullPool
 
-    engine = create_async_engine(url, future=True)
+    # TestClient крутит приложение в своём цикле событий, а соединение asyncpg привязано к
+    # циклу, где его открыли. Без пула каждое обращение открывает соединение там, где оно нужно.
+    engine = create_async_engine(url, future=True, poolclass=NullPool if POSTGRES else None)
     if POSTGRES:
         async with engine.begin() as connection:
             await connection.execute(text("drop schema public cascade"))

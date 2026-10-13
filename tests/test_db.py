@@ -118,12 +118,14 @@ async def test_database_refuses_a_made_up_stage(database):
 
 
 async def test_database_refuses_a_made_up_urgency(database):
+    # Короче 10 символов: длинное значение Postgres отвергает ещё по длине колонки,
+    # и до CHECK, который здесь и проверяется, дело бы не дошло.
     with pytest.raises(IntegrityError):
         async with db.Session() as session:
             await session.execute(
                 text(
                     "insert into leads (text, stage, urgency, updated_at) "
-                    "values ('текст', 'new', 'очень срочно', current_timestamp)"
+                    "values ('текст', 'new', 'срочно', current_timestamp)"
                 )
             )
             await session.commit()
