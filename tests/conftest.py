@@ -18,6 +18,12 @@ import ask  # noqa: E402
 import db  # noqa: E402
 import insight  # noqa: E402
 
+# Задан — тесты идут на Postgres (так в CI), иначе на sqlite-файле. Ветки миграций под
+# Postgres (NOT VALID / VALIDATE) на sqlite не исполняются вообще, проверить их можно только так.
+POSTGRES = os.environ.get("TEST_DATABASE_URL", "").replace(
+    "postgresql://", "postgresql+asyncpg://", 1
+)
+
 
 @pytest.fixture
 async def database(tmp_path, monkeypatch):
@@ -26,12 +32,17 @@ async def database(tmp_path, monkeypatch):
     create_all по моделям был бы быстрее, но тогда тесты проверяли бы схему из кода, а не
     ту, которую реально накатывает alembic — и сломанная миграция доезжала бы до прода.
     """
-    url = f"sqlite+aiosqlite:///{tmp_path / 'test.db'}"
+    url = POSTGRES or f"sqlite+aiosqlite:///{tmp_path / 'test.db'}"
     monkeypatch.setenv("DATABASE_URL", url)
 
+    from sqlalchemy import text
     from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
     engine = create_async_engine(url, future=True)
+    if POSTGRES:
+        async with engine.begin() as connection:
+            await connection.execute(text("drop schema public cascade"))
+            await connection.execute(text("create schema public"))
     monkeypatch.setattr(db, "engine", engine)
     monkeypatch.setattr(db, "Session", async_sessionmaker(engine, expire_on_commit=False))
 
