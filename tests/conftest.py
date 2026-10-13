@@ -15,6 +15,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 
 import app as app_module  # noqa: E402
 import db  # noqa: E402
+import insight  # noqa: E402
 
 
 @pytest.fixture
@@ -81,6 +82,6 @@ async def watcher(database):
 def no_ai(monkeypatch):
     """Ни один тест не должен ходить в модель за деньги."""
     monkeypatch.setattr(app_module, "enrich", lambda lead_id, announce=True: asyncio.sleep(0))
-    monkeypatch.setattr(app_module, "suggest", lambda lead_id: asyncio.sleep(0, result=False))
+    monkeypatch.setattr(insight, "rethink", lambda lead_id: asyncio.sleep(0))
     monkeypatch.setattr(app_module, "_seen", {})
     monkeypatch.setattr(app_module, "_failures", {})

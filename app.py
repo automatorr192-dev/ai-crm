@@ -42,13 +42,14 @@ import db
 import demo
 import export
 import forms
+import insight
 import notify
 import outbound
 import tgbot
 import webhook
-from ai import analyze_lead, suggest_next
+from ai import analyze_lead
 from hub import hub
-from models import CLOSED_STAGES, MSK, STAGES, URGENCIES, User, local
+from models import CLOSED_STAGES, MSK, STAGE_RU, STAGES, URGENCIES, User, local
 from observability import log, setup
 
 load_dotenv()
@@ -56,13 +57,6 @@ setup()
 
 # Модель отвечает служебными словами. В интерфейсе человек читает по-русски.
 URGENCY_RU = {"high": "высокая", "medium": "средняя", "low": "низкая"}
-STAGE_RU = {
-    "new": "Новые",
-    "in_work": "В работе",
-    "waiting": "Ждём ответа",
-    "won": "Сделка",
-    "lost": "Отказ",
-}
 EVENT_RU = {
     "created": "заявка принята",
     "marked": "модель разметила",
@@ -111,14 +105,6 @@ COMPANY = {
 }
 OFFER_DAYS = int(os.environ.get("OFFER_DAYS") or 14)
 SOURCES_MANUAL = ("звонок", "почта", "мессенджер", "встреча", "рекомендация", "другое")
-KNOWN_RU = {
-    "task": "задача",
-    "business": "бизнес",
-    "deadline": "срок",
-    "budget": "бюджет",
-    "call": "созвон",
-}
-ROLE_RU = {"client": "клиент", "agent": "ассистент", "manager": "менеджер"}
 
 
 def migrate() -> None:
@@ -339,6 +325,8 @@ def card(lead) -> dict:
         "assignee_id": lead.assignee_id,
         "overdue": lead.overdue,
         "hot": lead.hot,
+        "chance": lead.chance,
+        "chance_reason": insight.reason(lead),
     }
 
 
@@ -518,6 +506,7 @@ async def lead_card(request: Request, lead_id: int, user: User = Depends(current
             tg_link=tgbot.start_link(lead_id),
             sent=request.query_params.get("sent"),
             step=db.next_step(lead),
+            why=db.chance_why(lead),
             next_failed=request.query_params.get("next") == "0",
         ),
     )
@@ -587,7 +576,7 @@ async def change_stage(
     if lead.stage in CLOSED_STAGES:
         await db.set_next_step(lead_id, None)
     else:
-        asyncio.create_task(suggest(lead_id))
+        asyncio.create_task(insight.rethink(lead_id))
     await hub.send("lead.stage", card(await db.get_lead(lead_id, full=True)))
     if request.headers.get("accept", "").startswith("application/json"):
         return {"ok": True, "stage": lead.stage}
@@ -707,7 +696,7 @@ def remind_at(days: int, now: datetime | None = None) -> datetime:
 @app.post("/leads/{lead_id}/next")
 async def next_step(lead_id: int, user: User = Depends(editor)):
     await visible_lead(lead_id, user)
-    done = await suggest(lead_id)
+    done = await insight.suggest(lead_id)
     return RedirectResponse(
         f"/leads/{lead_id}" + ("" if done else "?next=0"), status.HTTP_303_SEE_OTHER
     )
@@ -1044,50 +1033,7 @@ async def enrich(lead_id: int, announce: bool = True) -> None:
         await db.mark_failed(lead_id, str(e))
         await hub.send("lead.failed", {"id": lead_id})
     await deliver(lead_id, announce)
-
-
-def deal_context(lead, talk, now: datetime | None = None) -> str:
-    """Сделка текстом для модели: то, на что смотрит менеджер, когда решает, что дальше."""
-    now = now or datetime.now(UTC)
-    moments = [item.created_at for item in [*lead.events, *talk]]
-    moments = [m if m.tzinfo else m.replace(tzinfo=UTC) for m in moments]
-    lines = [f"Стадия: {STAGE_RU[lead.stage]}"]
-    if lead.topic:
-        lines.append(f"Тема: {lead.topic}")
-    if lead.amount is not None:
-        lines.append(f"Сумма: {lead.amount:,.0f} ₽".replace(",", " "))
-    if moments:
-        lines.append(f"Последнее движение: {(now - max(moments)).days} дн. назад")
-    known = db.qualification(lead)
-    facts = [f"{label} — {known[key]}" for key, label in KNOWN_RU.items() if known.get(key)]
-    if facts:
-        lines.append("Выяснено: " + "; ".join(facts))
-    lines += ["", "Заявка:", lead.text]
-    if talk:
-        lines += ["", "Переписка, старое сверху:"]
-        lines += [f"{ROLE_RU.get(m.role, m.role)}: {m.text}" for m in talk[-12:]]
-    notes = sorted(lead.notes, key=lambda note: note.created_at)[-5:]
-    if notes:
-        lines += ["", "Комментарии команды, старое сверху:"]
-        lines += [f"{n.author.name}: {n.text}" if n.author else n.text for n in notes]
-    return "\n".join(lines)
-
-
-async def suggest(lead_id: int) -> bool:
-    """Следующий шаг по сделке. Модель не ответила — подсказки нет, сделка от этого не
-    страдает: менеджер пишет сам, как писал бы без ИИ."""
-    lead = await db.get_lead(lead_id, full=True)
-    if lead is None or lead.stage in CLOSED_STAGES:
-        return False
-    try:
-        context = deal_context(lead, await db.messages(lead_id))
-        step = await asyncio.to_thread(suggest_next, context)
-    except Exception:
-        log.exception("lead.next_failed", lead_id=lead_id)
-        return False
-    await db.set_next_step(lead_id, step.model_dump())
-    log.info("lead.next", lead_id=lead_id, remind_in_days=step.remind_in_days)
-    return True
+    await insight.estimate(lead_id)
 
 
 async def deliver(lead_id: int, announce: bool = True) -> None:

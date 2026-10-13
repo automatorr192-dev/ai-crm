@@ -9,10 +9,10 @@ import pytest
 
 import app as app_module
 import db
+import insight
 from ai import NextStep
 from models import MSK
 
-REAL_SUGGEST = app_module.suggest
 STEP = NextStep(
     message="Добрый день! Удобно созвониться завтра на 15 минут?",
     why="Задача и срок ясны, пора на созвон",
@@ -28,8 +28,7 @@ def model(monkeypatch):
         seen.append(deal)
         return STEP
 
-    monkeypatch.setattr(app_module, "suggest", REAL_SUGGEST)
-    monkeypatch.setattr(app_module, "suggest_next", fake)
+    monkeypatch.setattr(insight, "suggest_next", fake)
     return seen
 
 
@@ -48,7 +47,7 @@ async def test_context_shows_what_the_manager_sees(database):
     await db.add_note(lead.id, irina.id, "Ждёт смету до пятницы")
 
     full = await db.get_lead(lead.id, full=True)
-    text = app_module.deal_context(full, await db.messages(lead.id))
+    text = insight.deal_context(full, await db.messages(lead.id))
 
     assert "Стадия: Ждём ответа" in text
     assert "задача — запись клиентов; бюджет — до 100 тысяч" in text
@@ -60,7 +59,7 @@ async def test_context_shows_what_the_manager_sees(database):
 async def test_suggestion_is_saved_for_the_card(database, model):
     lead = await new_lead()
 
-    assert await app_module.suggest(lead.id)
+    assert await insight.suggest(lead.id)
 
     assert db.next_step(await db.get_lead(lead.id)) == STEP.model_dump()
     assert "Хочу бота для записи в салон" in model[0]
@@ -70,7 +69,7 @@ async def test_closed_deal_gets_no_suggestion(database, model):
     lead = await new_lead()
     await db.set_stage(lead.id, "lost")
 
-    assert not await app_module.suggest(lead.id)
+    assert not await insight.suggest(lead.id)
     assert model == []
 
 
@@ -92,8 +91,7 @@ async def test_model_failure_leaves_the_card_without_a_hint(database, manager, m
     def broken(deal):
         raise RuntimeError("все модели лежат")
 
-    monkeypatch.setattr(app_module, "suggest", REAL_SUGGEST)
-    monkeypatch.setattr(app_module, "suggest_next", broken)
+    monkeypatch.setattr(insight, "suggest_next", broken)
 
     response = manager.post(f"/leads/{lead.id}/next", follow_redirects=False)
 

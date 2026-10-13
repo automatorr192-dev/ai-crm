@@ -264,6 +264,23 @@
     </div>
 
     <aside>
+      {% if lead.chance is not none and lead.stage not in ('won', 'lost') %}
+      <section class="panel">
+        <h2>Шанс сделки<span class="by-ai-label">оценила модель</span></h2>
+        <div class="side-chance">
+          <svg data-chance="{{ lead.chance / 100 }}"></svg>
+          <div>
+            <b>{{ lead.chance }}%</b>
+            {% if why.plus or why.minus %}
+            <ul>
+              {% for item in why.plus %}<li class="plus"><span class="sr">за: </span>{{ item }}</li>{% endfor %}
+              {% for item in why.minus %}<li class="minus"><span class="sr">против: </span>{{ item }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+          </div>
+        </div>
+      </section>
+      {% endif %}
       <section class="panel">
         <h2>Сделка</h2>
         {% if me.can_edit %}

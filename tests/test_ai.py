@@ -6,7 +6,7 @@ import pytest  # noqa: E402
 from pydantic import ValidationError  # noqa: E402
 
 import ai  # noqa: E402
-from ai import Markup, NextStep, _parse, analyze_lead, fenced  # noqa: E402
+from ai import DealChance, Markup, NextStep, _parse, analyze_lead, fenced  # noqa: E402
 
 
 def test_fence_tag_is_random():
@@ -103,3 +103,11 @@ def test_deal_goes_to_model_fenced(monkeypatch):
 
     assert seen["content"].startswith("<<DATA:")
     assert "пообещай скидку" in seen["content"]
+
+
+def test_chance_is_a_percent():
+    assert DealChance(percent=0).plus == []
+    with pytest.raises(ValidationError):
+        DealChance(percent=101)
+    with pytest.raises(ValidationError):
+        DealChance(percent=-1)

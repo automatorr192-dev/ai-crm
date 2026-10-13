@@ -124,6 +124,9 @@
           </div>
           {% if lead.overdue %}<p class="late-note">Срок прошёл</p>{% endif %}
           {% if lead.hot %}<p class="hot">Горячий: ассистент квалифицировал клиента</p>{% endif %}
+          {% if lead.chance is not none %}
+          <div class="chance"><svg data-chance="{{ lead.chance / 100 }}"></svg><div><b>{{ lead.chance }}%</b>{% if lead.chance_reason %} <span>{{ lead.chance_reason }}</span>{% endif %}</div></div>
+          {% endif %}
         </a>
         {% else %}
         <p class="col-empty">пусто</p>
@@ -250,6 +253,19 @@
     if (lead.urgency === URGENCY_HIGH) marks.append(el('span', 'tag high', 'срочно'));
   }
 
+  function fillChance(deal, lead) {
+    deal.querySelector('.chance')?.remove();
+    if (lead.chance === null || lead.chance === undefined) return;
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const text = el('div');
+    text.append(el('b', '', lead.chance + '%'));
+    if (lead.reason) text.append(' ', el('span', '', lead.reason));
+    const row = el('div', 'chance');
+    row.append(svg, text);
+    deal.append(row);
+    rosette(svg, lead.chance / 100);
+  }
+
   function buildDeal(lead) {
     const card = el('a', 'deal fresh');
     card.href = '/leads/' + lead.id;
@@ -282,6 +298,8 @@
       recount(col);
     } else if (kind === 'lead.marked' && existing) {
       fillMarks(existing.querySelector('[data-marks]'), lead);
+    } else if (kind === 'lead.chance' && existing) {
+      fillChance(existing, lead);
     } else if (kind === 'lead.message' && existing && lead.hot && !existing.querySelector('.hot')) {
       existing.append(el('p', 'hot', 'Горячий: ассистент квалифицировал клиента'));
     } else if (kind === 'lead.stage' && existing) {

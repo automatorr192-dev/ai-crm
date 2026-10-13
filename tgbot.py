@@ -14,6 +14,7 @@ import os
 
 import agent
 import db
+import insight
 from hub import hub
 from observability import log
 
@@ -99,6 +100,9 @@ async def _answer(lead_id: int, chat_id: int, text: str | None) -> None:
     await hub.send("lead.message", {"id": lead_id, "hot": bool(lead and lead.hot)})
     if answer:
         await send(chat_id, answer)
+    else:
+        # Клиента ведёт человек, и клиент ему ответил: шаг и шанс уже другие.
+        asyncio.create_task(insight.rethink(lead_id))
 
 
 def _router():

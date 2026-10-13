@@ -701,6 +701,25 @@ async def set_next_step(lead_id: int, step: dict | None) -> None:
         await session.commit()
 
 
+def chance_why(lead: Lead) -> dict:
+    try:
+        return json.loads(lead.chance_why) if lead.chance_why else {}
+    except ValueError:
+        return {}
+
+
+async def set_chance(lead_id: int, percent: int, plus: list[str], minus: list[str]):
+    async with Session() as session:
+        lead = await session.get(Lead, lead_id)
+        if lead is None:
+            return None
+        lead.chance = percent
+        lead.chance_why = json.dumps({"plus": plus, "minus": minus}, ensure_ascii=False)
+        await session.commit()
+        await session.refresh(lead)
+    return lead
+
+
 async def save_qualification(lead_id: int, fields: dict) -> dict:
     """Дописать выясненное. Пустые значения не затирают уже известное: модель, не
     услышав про бюджет в этой реплике, не должна стирать бюджет из прошлой."""

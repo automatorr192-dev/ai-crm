@@ -154,6 +154,21 @@ label { font-size: 13px; font-weight: 550; color: var(--ink-2); display: block; 
 /* блоки */
 .panel { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 20px 22px; }
 .panel + .panel { margin-top: 16px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Шанс сделки: розетка-гильош, как на купюре, плотнее при большем шансе (rosette.js). */
+.chance { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--rule); }
+.chance svg { width: 34px; height: 34px; flex: none; color: var(--violet); }
+.chance b { font-size: 13.5px; font-weight: 650; color: var(--violet); font-variant-numeric: tabular-nums; }
+.chance span { font-size: 12.5px; color: var(--ink-3); line-height: 1.35; }
+.deal.won .chance, .deal.lost .chance { display: none; }
+.side-chance { display: flex; gap: 16px; align-items: center; }
+.side-chance svg { width: 84px; height: 84px; color: var(--violet); flex: none; }
+.side-chance b { font-family: var(--money); font-size: 40px; font-weight: 400; color: var(--violet); line-height: 1; }
+.side-chance ul { list-style: none; margin: 8px 0 0; padding: 0; font-size: 13.5px; color: var(--ink-2); display: grid; gap: 4px; }
+.side-chance li::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+.side-chance li.plus::before { background: var(--engrave); }
+.side-chance li.minus::before { background: var(--carmine); }
 .urg { display: inline-flex; align-items: center; font-size: 12.5px; padding: 3px 10px; border-radius: 12px; border: 1px solid transparent; }
 .urg i { display: none; }
 .u-high { color: var(--carmine); background: var(--carmine-soft); }

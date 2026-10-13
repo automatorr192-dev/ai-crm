@@ -19,6 +19,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
+    Integer,
     Numeric,
     String,
     Text,
@@ -36,6 +37,15 @@ Role = Literal["admin", "manager", "viewer"]
 STAGES: tuple[str, ...] = ("new", "in_work", "waiting", "won", "lost")
 # Стадии, после которых заявка больше не в работе: их не считают в «активных деньгах».
 CLOSED_STAGES: tuple[str, ...] = ("won", "lost")
+# Модель отвечает служебными словами. В интерфейсе и в промптах — по-русски.
+STAGE_RU = {
+    "new": "Новые",
+    "in_work": "В работе",
+    "waiting": "Ждём ответа",
+    "won": "Сделка",
+    "lost": "Отказ",
+}
+CHANCE_CHECK = "chance is null or chance between 0 and 100"
 
 URGENCIES: tuple[str, ...] = ("low", "medium", "high")
 # Кто пишет в переписке по заявке: клиент, ассистент-квалификатор или живой менеджер.
@@ -161,6 +171,7 @@ class Lead(Base):
         CheckConstraint(f"urgency is null or {_in('urgency', URGENCIES)}", name="ck_leads_urgency"),
         # Деньги не бывают отрицательными, а минус в сумме ломает любой отчёт молча.
         CheckConstraint("amount is null or amount >= 0", name="ck_leads_amount"),
+        CheckConstraint(CHANCE_CHECK, name="ck_leads_chance"),
         # Доска и список читают свежие сверху внутри стадии.
         Index("ix_leads_stage_created", "stage", text("created_at DESC")),
     )
@@ -217,6 +228,10 @@ class Lead(Base):
     # Подсказка модели: сообщение клиенту, почему именно оно и через сколько дней напомнить.
     # Не событие: подсказка не движение по сделке и не должна сбрасывать «без движения».
     next_step: Mapped[str | None] = mapped_column(Text)
+    # Шанс дойти до оплаты по оценке модели, в процентах, и её причины «за» и «против»
+    # JSON-ом. Процент отдельной колонкой: по нему сортируют и считают прогноз денег.
+    chance: Mapped[int | None] = mapped_column(Integer)
+    chance_why: Mapped[str | None] = mapped_column(Text)
 
     utm_source: Mapped[str | None] = mapped_column(String(120), index=True)
     utm_medium: Mapped[str | None] = mapped_column(String(120))
