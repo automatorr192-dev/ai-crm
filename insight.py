@@ -9,7 +9,7 @@ import asyncio
 from datetime import UTC, datetime
 
 import db
-from ai import estimate_chance, suggest_next
+from ai import estimate_chance, suggest_next, write_offer
 from hub import hub
 from models import CLOSED_STAGES, STAGE_RU
 from observability import log
@@ -99,6 +99,32 @@ async def estimate(lead_id: int) -> bool:
 async def rethink(lead_id: int) -> None:
     """Сделка сдвинулась: пересчитать и шаг, и шанс. Вызовы независимы и идут параллельно."""
     await asyncio.gather(suggest(lead_id), estimate(lead_id))
+
+
+def split_price(amount, shares: list[int]) -> list[int]:
+    """Сумма сделки по этапам пропорционально долям, с точностью до сотни рублей. Остаток
+    округления уходит в последний этап: итог КП обязан совпасть с суммой сделки."""
+    if not amount or not shares:
+        return [0] * len(shares)
+    total = int(amount)
+    weight = sum(shares)
+    prices = [round(total * share / weight, -2) for share in shares[:-1]]
+    return [int(price) for price in prices] + [total - int(sum(prices))]
+
+
+async def draft_offer(lead_id: int) -> bool:
+    lead = await db.get_lead(lead_id, full=True)
+    if lead is None:
+        return False
+    try:
+        context = deal_context(lead, await db.messages(lead_id))
+        draft = await asyncio.to_thread(write_offer, context)
+    except Exception:
+        log.exception("lead.offer_failed", lead_id=lead_id)
+        return False
+    await db.set_offer_draft(lead_id, draft.model_dump())
+    log.info("lead.offer", lead_id=lead_id, lines=len(draft.lines))
+    return True
 
 
 def reason(lead) -> str | None:

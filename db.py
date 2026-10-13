@@ -701,6 +701,22 @@ async def set_next_step(lead_id: int, step: dict | None) -> None:
         await session.commit()
 
 
+def offer_draft(lead: Lead) -> dict:
+    try:
+        return json.loads(lead.offer_draft) if lead.offer_draft else {}
+    except ValueError:
+        return {}
+
+
+async def set_offer_draft(lead_id: int, draft: dict) -> None:
+    async with Session() as session:
+        lead = await session.get(Lead, lead_id)
+        if lead is None:
+            return
+        lead.offer_draft = json.dumps(draft, ensure_ascii=False)
+        await session.commit()
+
+
 def chance_why(lead: Lead) -> dict:
     try:
         return json.loads(lead.chance_why) if lead.chance_why else {}

@@ -232,6 +232,8 @@ class Lead(Base):
     # JSON-ом. Процент отдельной колонкой: по нему сортируют и считают прогноз денег.
     chance: Mapped[int | None] = mapped_column(Integer)
     chance_why: Mapped[str | None] = mapped_column(Text)
+    # Черновик КП от модели: текст и этапы с долями цены. Деньги по этапам считает код.
+    offer_draft: Mapped[str | None] = mapped_column(Text)
 
     utm_source: Mapped[str | None] = mapped_column(String(120), index=True)
     utm_medium: Mapped[str | None] = mapped_column(String(120))

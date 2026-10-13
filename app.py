@@ -556,6 +556,9 @@ def _back(request: Request, lead_id: int) -> RedirectResponse:
 async def offer(request: Request, lead_id: int, user: User = Depends(editor)):
     lead = await visible_lead(lead_id, user, full=True)
     today = datetime.now(MSK)
+    draft = db.offer_draft(lead)
+    lines = draft.get("lines", [])
+    prices = insight.split_price(lead.amount, [line["share"] for line in lines])
     return templates.TemplateResponse(
         request,
         "offer.html",
@@ -565,7 +568,19 @@ async def offer(request: Request, lead_id: int, user: User = Depends(editor)):
             "company": COMPANY,
             "today": f"{today:%d.%m.%Y}",
             "valid_until": f"{today + timedelta(days=OFFER_DAYS):%d.%m.%Y}",
+            "draft": draft,
+            "priced": list(zip(lines, prices, strict=True)),
+            "draft_failed": request.query_params.get("draft") == "0",
         },
+    )
+
+
+@app.post("/leads/{lead_id}/offer/draft")
+async def offer_draft(lead_id: int, user: User = Depends(editor)):
+    await visible_lead(lead_id, user)
+    done = await insight.draft_offer(lead_id)
+    return RedirectResponse(
+        f"/leads/{lead_id}/offer" + ("" if done else "?draft=0"), status.HTTP_303_SEE_OTHER
     )
 
 

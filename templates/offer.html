@@ -31,7 +31,10 @@
   .total td { border-bottom: 0; font-weight: 650; font-size: 15px; padding-top: 12px; }
   .del { border: 0; background: none; color: var(--ink-3); cursor: pointer; font-size: 16px; line-height: 1; }
   .add { margin-top: 10px; }
-  ul.terms { padding-left: 18px; }
+  ul.terms, ul.result { padding-left: 18px; }
+  ul.result li + li { margin-top: 4px; }
+  .bar form { display: inline; }
+  .bar .ai-note { color: #5d46a8; }
   ul.terms li + li { margin-top: 4px; }
   footer { margin-top: 34px; display: flex; justify-content: space-between; gap: 20px; color: var(--ink-2); }
   @media print {
@@ -47,7 +50,10 @@
 <body>
 <div class="bar">
   <a href="/leads/{{ lead.id }}">← к сделке</a>
-  <span class="hint">Текст и цены правятся прямо на листе</span>
+  {% if draft %}<span class="hint ai-note">Черновик написала модель — проверьте перед отправкой. Текст и цены правятся прямо на листе</span>
+  {% elif draft_failed %}<span class="hint ai-note">Модель не ответила, попробуйте ещё раз</span>
+  {% else %}<span class="hint">Текст и цены правятся прямо на листе</span>{% endif %}
+  <form method="post" action="/leads/{{ lead.id }}/offer/draft"><button class="btn">{{ 'Переписать черновик' if draft else 'Черновик от ИИ' }}</button></form>
   <button class="btn primary" type="button" onclick="print()">Сохранить в PDF</button>
 </div>
 
@@ -64,16 +70,29 @@
     </div>
   </header>
 
-  <h1 contenteditable="true">{{ (lead.topic or 'Предложение') | capitalize }}</h1>
+  <h1 contenteditable="true">{{ draft.title if draft else (lead.topic or 'Предложение') | capitalize }}</h1>
   <p class="for">Для: <span contenteditable="true">{{ lead.title }}</span>{% if lead.client_contact %} · {{ lead.client_contact }}{% endif %}</p>
 
   <h2>Задача</h2>
-  <p class="task" contenteditable="true">{{ known.get('task') or lead.text }}</p>
+  <p class="task" contenteditable="true">{{ draft.task if draft else (known.get('task') or lead.text) }}</p>
+  {% if draft %}
+  <h2>Что сделаем</h2>
+  <p class="task" contenteditable="true">{{ draft.solution }}</p>
+  {% endif %}
 
   <h2>Состав и стоимость</h2>
   <table>
     <thead><tr><th>Что делаем</th><th class="num">Кол-во</th><th class="num">Цена, ₽</th><th class="num">Сумма, ₽</th><th></th></tr></thead>
     <tbody id="lines">
+      {% for line, price in priced %}
+      <tr>
+        <td contenteditable="true">{{ line.name }}</td>
+        <td class="num" contenteditable="true">1</td>
+        <td class="num" contenteditable="true">{{ '{:,.0f}'.format(price).replace(',', ' ') }}</td>
+        <td class="num" data-sum></td>
+        <td><button class="del" type="button" aria-label="Убрать строку">×</button></td>
+      </tr>
+      {% else %}
       <tr>
         <td contenteditable="true">{{ (lead.topic or 'Работы по задаче') | capitalize }}</td>
         <td class="num" contenteditable="true">1</td>
@@ -81,12 +100,20 @@
         <td class="num" data-sum></td>
         <td><button class="del" type="button" aria-label="Убрать строку">×</button></td>
       </tr>
+      {% endfor %}
     </tbody>
     <tfoot>
       <tr class="total"><td colspan="3">Итого</td><td class="num" id="total"></td><td></td></tr>
     </tfoot>
   </table>
   <button class="btn add" type="button" id="add">+ строка</button>
+
+  {% if draft.result %}
+  <h2>Что вы получите</h2>
+  <ul class="result" contenteditable="true">
+    {% for item in draft.result %}<li>{{ item }}</li>{% endfor %}
+  </ul>
+  {% endif %}
 
   <h2>Условия</h2>
   <ul class="terms" contenteditable="true">
