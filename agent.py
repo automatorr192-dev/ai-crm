@@ -32,7 +32,11 @@ CALL_HOURS = tuple(range(10, 18))
 AGENT_MODELS = [
     m.strip()
     for m in os.environ.get(
-        "AGENT_MODELS", "nvidia/nemotron-3-super-120b-a12b:free,nvidia/nemotron-3-ultra-550b-a55b:free,deepseek/deepseek-v4-flash"
+        "AGENT_MODELS",
+        (
+            "nvidia/nemotron-3-super-120b-a12b:free,nvidia/nemotron-3-ultra-550b-a55b:free,"
+            "deepseek/deepseek-v4-flash"
+        ),
     ).split(",")
     if m.strip()
 ]
