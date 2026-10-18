@@ -24,7 +24,7 @@ MSK = timezone(timedelta(hours=3), "MSK")
 MAX_STEPS = 6
 # Потолок ответа. Без него OpenRouter резервирует под ответ до 64 тысяч токенов, и при
 # небольшом балансе запрос отклоняется целиком, хотя реальный ответ — пара предложений.
-MAX_TOKENS = 1024
+MAX_TOKENS = 4000
 FIELDS = ("task", "business", "deadline", "budget")
 # Созвоны по будням, слотами по часу. Начало слота — по Москве.
 CALL_HOURS = tuple(range(10, 18))
@@ -32,7 +32,7 @@ CALL_HOURS = tuple(range(10, 18))
 AGENT_MODELS = [
     m.strip()
     for m in os.environ.get(
-        "AGENT_MODELS", "anthropic/claude-haiku-4.5,deepseek/deepseek-v4-flash"
+        "AGENT_MODELS", "nvidia/nemotron-3-super-120b-a12b:free,nvidia/nemotron-3-ultra-550b-a55b:free,deepseek/deepseek-v4-flash"
     ).split(",")
     if m.strip()
 ]

@@ -11,6 +11,8 @@ from pydantic import BaseModel, Field, ValidationError
 load_dotenv()
 
 _client: OpenAI | None = None
+# С запасом: reasoning-модели тратят часть потолка на размышление, а платят только за сказанное.
+MAX_TOKENS = 4000
 
 
 def _get_client() -> OpenAI:
@@ -25,12 +27,13 @@ def _get_client() -> OpenAI:
 
 
 # Бесплатные модели регулярно перегружены и отвечают 429 — идём по списку, пока одна
-# не ответит, вместо падения на первой же.
+# не ответит, вместо падения на первой же. Последней стоит платная, но копеечная DeepSeek:
+# на бесплатном уровне OpenRouter 50 запросов в сутки на весь аккаунт.
 MODELS = [
     m.strip()
     for m in os.environ.get(
         "MODELS",
-        "deepseek/deepseek-v4-flash,nvidia/nemotron-3-super-120b-a12b:free",
+        "nvidia/nemotron-3-super-120b-a12b:free,nvidia/nemotron-3.5-super-vl:free,deepseek/deepseek-v4-flash",
     ).split(",")
     if m.strip()
 ]
@@ -185,7 +188,7 @@ def _ask(system: str, content: str, schema: type[T]) -> tuple[T, dict]:
                     {"role": "user", "content": content},
                 ],
                 response_format={"type": "json_object"},
-                max_tokens=1024,
+                max_tokens=MAX_TOKENS,
                 extra_body={"usage": {"include": True}},
             )
             usage = response.usage
