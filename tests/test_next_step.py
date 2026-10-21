@@ -50,6 +50,7 @@ async def test_context_shows_what_the_manager_sees(database):
     text = insight.deal_context(full, await db.messages(lead.id))
 
     assert "Стадия: Ждём ответа" in text
+    assert "Клиент: Полина" in text
     assert "задача — запись клиентов; бюджет — до 100 тысяч" in text
     assert text.index("клиент: Пришлите смету") < text.index("менеджер: Пришлю к пятнице")
     assert "Ирина: Ждёт смету до пятницы" in text

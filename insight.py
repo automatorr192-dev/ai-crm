@@ -30,6 +30,8 @@ def deal_context(lead, talk, now: datetime | None = None) -> str:
     moments = [item.created_at for item in [*lead.events, *talk]]
     moments = [m if m.tzinfo else m.replace(tzinfo=UTC) for m in moments]
     lines = [f"Стадия: {STAGE_RU[lead.stage]}"]
+    if lead.client_name:
+        lines.append(f"Клиент: {lead.client_name}")
     if lead.topic:
         lines.append(f"Тема: {lead.topic}")
     if lead.amount is not None:
