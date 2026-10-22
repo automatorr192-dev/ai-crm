@@ -1,0 +1,36 @@
+name: Evals
+
+# Только вручную: Actions → Evals → Run workflow. Каждый прогон тратит запросы к модели, а
+# бесплатный лимит OpenRouter общий на все проекты — гонять его на каждый пуш нельзя.
+on:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: "Что проверяем"
+        type: choice
+        options: [markup, next, chance, ask]
+        default: markup
+      limit:
+        description: "Сколько кейсов (пусто — все)"
+        required: false
+        default: ""
+
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: if [ "${{ inputs.suite }}" = markup ]; then python evals/run_eval.py ${LIMIT:+--limit $LIMIT}; else python evals/run_insight.py ${{ inputs.suite }} ${LIMIT:+--limit $LIMIT}; fi
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          LIMIT: ${{ inputs.limit }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-runs
+          path: evals/runs/
