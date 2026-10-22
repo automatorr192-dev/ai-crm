@@ -48,7 +48,7 @@ import notify
 import outbound
 import tgbot
 import webhook
-from ai import analyze_lead
+from ai import analyze_lead, read_estimate
 from hub import hub
 from models import CLOSED_STAGES, MSK, STAGE_RU, STAGES, URGENCIES, User, local
 from observability import log, setup
@@ -1064,6 +1064,32 @@ async def public_lead(request: Request, data: PublicLeadIn):
     shape, _ = await accept(data, PUBLIC_SOURCE)
     # Ссылка продолжить разговор с ассистентом. Подписана: id заявки в ней не подделать.
     return {"id": shape["id"], "status": "ok", "telegram": tgbot.start_link(shape["id"])}
+
+
+class EstimateIn(BaseModel):
+    text: str = Field(min_length=10, max_length=2000)
+
+
+@app.post("/api/public/estimate")
+async def public_estimate(request: Request, data: EstimateIn):
+    """Ремонт словами → поля калькулятора на сайте ремонтной компании. Цену считает сам сайт:
+    модель только раскладывает описание и цены не видит. Потолок с адреса — общий с формой
+    заявок: каждый разбор — вызов модели, а сайт открыт всему интернету."""
+    if not _allowed(_client_ip(request)):
+        raise HTTPException(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            f"С одного адреса принимаем {PUBLIC_PER_HOUR} запросов в час. Загляните позже.",
+        )
+    try:
+        estimate = await asyncio.to_thread(read_estimate, data.text)
+    except Exception as e:
+        log.exception("estimate.failed")
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "Не получилось разобрать описание. Выставьте параметры вручную.",
+        ) from e
+    log.info("estimate.read", filled=sum(v is not None for v in estimate.model_dump().values()))
+    return estimate.model_dump()
 
 
 async def enrich(lead_id: int, announce: bool = True) -> None:

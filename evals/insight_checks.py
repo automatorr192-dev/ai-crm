@@ -142,3 +142,16 @@ def ask(expect: dict, question: str, answer: str, calls: list[dict]) -> dict:
                 ok = value is not None and any(_known(v, [value]) for v in numbers(answer))
             checks["назван главный факт"] = checks.get("назван главный факт", True) and ok
     return checks | _common(answer, expect)
+
+
+def estimate(expect: dict, output: dict) -> dict:
+    """Поля калькулятора: каждое, что есть в ожидании, должно совпасть. null — модель не должна
+    угадывать то, чего в описании нет."""
+    checks = {}
+    for field, wanted in expect.items():
+        if field == "unclear_given":
+            checks["сказала, чего не хватает"] = bool(output.get("unclear"))
+            continue
+        allowed = wanted if isinstance(wanted, list) else [wanted]
+        checks[f"поле {field}"] = output.get(field) in allowed
+    return checks

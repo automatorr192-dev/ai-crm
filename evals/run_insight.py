@@ -28,7 +28,7 @@ from types import SimpleNamespace as NS
 HERE = Path(__file__).parent
 RUNS = HERE / "runs"
 # Запросов к модели на кейс: шаг и шанс — один ответ, «Спроси CRM» — запрос к базе и вывод.
-COST = {"next": 1, "chance": 1, "ask": 2}
+COST = {"next": 1, "chance": 1, "ask": 2, "estimate": 1}
 
 parser = argparse.ArgumentParser()
 parser.add_argument("suite", choices=list(COST))
@@ -99,6 +99,14 @@ async def run_chance(case: dict) -> dict:
     return {"output": output, "checks": checks.chance(case["expect"], output)}
 
 
+async def run_estimate(case: dict) -> dict:
+    estimate, _ = await asyncio.to_thread(
+        ai._ask, ai.ESTIMATE_SYSTEM, ai.fenced(case["input"]["text"]), ai.Estimate
+    )
+    output = estimate.model_dump()
+    return {"output": output, "checks": checks.estimate(case["expect"], output)}
+
+
 async def run_ask(case: dict) -> dict:
     viewer = await db.get_user_by_login(case["input"].get("viewer", "demo-owner"))
     question = case["input"]["question"]
@@ -152,7 +160,9 @@ async def main() -> None:
 
     if args.suite == "ask":
         await prepare_ask()
-    run = {"next": run_next, "chance": run_chance, "ask": run_ask}[args.suite]
+    run = {"next": run_next, "chance": run_chance, "ask": run_ask, "estimate": run_estimate}[
+        args.suite
+    ]
 
     results = []
     for case in cases:

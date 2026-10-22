@@ -8,7 +8,7 @@ on:
       suite:
         description: "Что проверяем"
         type: choice
-        options: [markup, next, chance, ask]
+        options: [markup, next, chance, ask, estimate]
         default: markup
       limit:
         description: "Сколько кейсов (пусто — все)"

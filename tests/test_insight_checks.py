@@ -126,3 +126,29 @@ def test_datasets_are_well_formed():
             else:
                 assert case["input"]["question"].strip()
                 assert "call" in case["expect"] or case["expect"].get("no_tools")
+
+
+def test_estimate_fields_must_match_and_nulls_must_stay_null():
+    expect = {"area": [72, 73], "home": "new", "design": None, "unclear_given": True}
+    good = {
+        "area": 73,
+        "home": "new",
+        "level": "comfort",
+        "design": None,
+        "unclear": "Нет санузлов",
+    }
+    assert all(checks.estimate(expect, good).values())
+
+    guessed = {"area": 70, "home": "old", "design": True, "unclear": None}
+    result = checks.estimate(expect, guessed)
+    assert not any(result.values())
+
+
+def test_estimate_dataset_is_well_formed():
+    lines = (EVALS / "estimate.jsonl").read_text("utf-8").splitlines()
+    cases = [json.loads(line) for line in lines if line.strip()]
+    assert len(cases) >= 10
+    assert len({c["id"] for c in cases}) == len(cases)
+    fields = {"area", "home", "level", "design", "unclear_given"}
+    assert all(set(c["expect"]) <= fields and c["input"]["text"].strip() for c in cases)
+    assert any("инъекция" in c["id"] for c in cases)

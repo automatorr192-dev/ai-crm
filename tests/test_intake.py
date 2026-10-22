@@ -138,3 +138,52 @@ async def test_websocket_is_closed_to_strangers(database, client):
 async def test_websocket_opens_for_a_logged_in_person(database, boss):
     with boss.websocket_connect("/ws/leads") as socket:
         assert socket is not None
+
+
+# --- ИИ-смета для сайта ремонта ----------------------------------------------------
+
+
+def test_estimate_returns_calculator_fields(client, monkeypatch):
+    from ai import Estimate
+
+    seen = []
+
+    def fake(text):
+        seen.append(text)
+        return Estimate(area=54, home="old", level="comfort", design=None, unclear="Нет санузлов")
+
+    monkeypatch.setattr(app_module, "read_estimate", fake)
+    response = client.post("/api/public/estimate", json={"text": "Двушка 54 метра во вторичке"})
+
+    assert response.json() == {
+        "area": 54,
+        "home": "old",
+        "level": "comfort",
+        "design": None,
+        "unclear": "Нет санузлов",
+    }
+    assert seen == ["Двушка 54 метра во вторичке"]
+
+
+def test_estimate_needs_a_real_description(client):
+    assert client.post("/api/public/estimate", json={"text": "ремонт"}).status_code == 422
+
+
+def test_model_failure_tells_to_set_fields_by_hand(client, monkeypatch):
+    def broken(text):
+        raise RuntimeError("все модели лежат")
+
+    monkeypatch.setattr(app_module, "read_estimate", broken)
+    response = client.post("/api/public/estimate", json={"text": "Студия 30 метров, бюджетно"})
+
+    assert response.status_code == 503
+    assert "вручную" in response.json()["detail"]
+
+
+def test_estimate_shares_the_hourly_ceiling_with_the_form(client, monkeypatch):
+    from ai import Estimate
+
+    monkeypatch.setattr(app_module, "PUBLIC_PER_HOUR", 1)
+    monkeypatch.setattr(app_module, "read_estimate", lambda text: Estimate())
+    assert client.post("/api/public/estimate", json={"text": "Студия 30 метров"}).status_code == 200
+    assert client.post("/api/public/estimate", json={"text": "Студия 31 метр"}).status_code == 429

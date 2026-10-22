@@ -103,6 +103,7 @@ def no_ai(monkeypatch):
     monkeypatch.setattr(app_module, "enrich", lambda lead_id, announce=True: asyncio.sleep(0))
     monkeypatch.setattr(insight, "rethink", lambda lead_id: asyncio.sleep(0))
     monkeypatch.setattr(ask, "_complete", _no_model)
+    monkeypatch.setattr(app_module, "read_estimate", _no_model)
     monkeypatch.setattr(app_module, "_asked", {})
     monkeypatch.setattr(app_module, "_seen", {})
     monkeypatch.setattr(app_module, "_failures", {})
